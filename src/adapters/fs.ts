@@ -36,3 +36,20 @@ export function fromFs(path: string): RouteIR {
     params: mapper.exec(path),
   };
 }
+
+export function toFs(route: RouteIR): string {
+  let i = 0;
+  return route.params
+    .map((r) => {
+      if (r.catchAll?.greedy) {
+        const name = r.catchAll.name || `_${++i}`;
+        return r.optional ? `[[...${name}]]` : `[...${name}]`;
+      }
+      if (r.catchAll && !r.catchAll.greedy) {
+        const name = r.catchAll.name || `_${++i}`;
+        return r.optional ? `[[${name}]]` : `[${name}]`;
+      }
+      return r.value;
+    })
+    .join("/");
+}
