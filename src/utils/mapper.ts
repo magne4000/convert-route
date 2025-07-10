@@ -1,4 +1,4 @@
-import type { RouteParam } from "../types";
+import type { RouteParam } from "../types.js";
 
 export type GetRouteParam = (
   match: RegExpMatchArray,
@@ -18,7 +18,7 @@ export class SegmentMapper {
     return path.split("/").map((segment): RouteParam => {
       for (const [pattern, getParam] of this.mapping) {
         // biome-ignore lint/suspicious/noAssignInExpressions: ignore
-        if ((match = path.match(pattern)) !== null) {
+        if ((match = segment.match(pattern)) !== null) {
           return {
             value: segment,
             ...getParam(match, segment),

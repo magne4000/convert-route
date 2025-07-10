@@ -18,20 +18,20 @@ const mapper = new SegmentMapper()
     optional: true,
     catchAll: {
       greedy: false,
-      name: match.groups![0],
+      name: match[1],
     },
   }))
   .match(/^\*\*:(.+)$/, (match) => ({
     optional: true,
     catchAll: {
       greedy: true,
-      name: match.groups![0],
+      name: match[1],
     },
   }))
   .match(/^:(.+)$/, (match) => ({
     catchAll: {
       greedy: false,
-      name: match.groups![0],
+      name: match[1],
     },
   }));
 

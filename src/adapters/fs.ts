@@ -6,26 +6,26 @@ const mapper = new SegmentMapper()
   .match(/^\[\[\.\.\.([^\]]+)]]$/, (match) => ({
     optional: true,
     catchAll: {
-      name: match.groups![0],
+      name: match[1],
       greedy: true,
     },
   }))
   .match(/^\[\[([^\]]+)]]$/, (match) => ({
     optional: true,
     catchAll: {
-      name: match.groups![0],
+      name: match[1],
       greedy: false,
     },
   }))
   .match(/^\[\.\.\.([^\]]+)]$/, (match) => ({
     catchAll: {
-      name: match.groups![0],
+      name: match[1],
       greedy: true,
     },
   }))
   .match(/^\[([^\]]+)]$/, (match) => ({
     catchAll: {
-      name: match.groups![0],
+      name: match[1],
       greedy: false,
     },
   }));
