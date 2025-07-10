@@ -22,10 +22,6 @@ export const routes = withKey([
     fs: "/foo/[id]",
   },
   {
-    rou3: "/foo/:id",
-    fs: "/foo/[id]",
-  },
-  {
     rou3: "/foo/:foo/bar/:bar",
     fs: "/foo/[foo]/bar/[bar]",
   },
