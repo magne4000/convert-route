@@ -30,6 +30,8 @@ export const routes = withKey([
     fs: "/foo/[foo]/bar/[bar]",
   },
   {
+    // When an array is provided, we use index [0] for test cases.
+    // However, when converting routes from other formats, any element in the array can be matched.
     rou3: ["/foo/*", "/foo/*:_1"],
     fs: "/foo/[[_1]]",
   },
