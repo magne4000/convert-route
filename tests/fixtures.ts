@@ -1,4 +1,5 @@
 export const shouldMatch = Symbol.for("shouldMatch");
+export const shouldNotMatch = Symbol.for("shouldNotMatch");
 
 type FixtureInValue = string | Route;
 
@@ -11,6 +12,7 @@ interface FixtureAdapters {
 
 interface WithSymbols {
   [shouldMatch]: string[];
+  [shouldNotMatch]: string[];
 }
 
 export interface Route {
@@ -31,6 +33,7 @@ export const routes = prepare([
     "path-to-regexp-v6": "/",
     "path-to-regexp-v8": "/",
     [shouldMatch]: ["/"],
+    [shouldNotMatch]: ["/a", "/a/b"],
   },
   {
     rou3: "/foo",
@@ -38,6 +41,7 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo",
     "path-to-regexp-v8": "/foo",
     [shouldMatch]: ["/foo"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo/a", "/foo/a/b"],
   },
   {
     rou3: "/foo/bar",
@@ -45,6 +49,14 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/bar",
     "path-to-regexp-v8": "/foo/bar",
     [shouldMatch]: ["/foo/bar"],
+    [shouldNotMatch]: [
+      "/a",
+      "/a/b",
+      "/foo/a",
+      "/foo/a/b",
+      "/foo/bar/a",
+      "/foo/bar/a/b",
+    ],
   },
   {
     rou3: "/foo/:id",
@@ -52,6 +64,7 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/:id",
     "path-to-regexp-v8": "/foo/:id",
     [shouldMatch]: ["/foo/a", "/foo/b"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo/bar/a", "/foo/bar/a/b"],
   },
   {
     rou3: "/foo/:foo/bar/:bar",
@@ -59,22 +72,33 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/:foo/bar/:bar",
     "path-to-regexp-v8": "/foo/:foo/bar/:bar",
     [shouldMatch]: ["/foo/a/bar/b"],
+    [shouldNotMatch]: [
+      "/a",
+      "/a/b",
+      "/foo/a",
+      "/foo/a/b",
+      "/foo/bar/b",
+      "/foo/a/bar/b/c",
+      "/foo/a/bar/b/c/d",
+    ],
   },
   {
     rou3: "/foo/*",
     "path-to-regexp-v6": "/foo/:_1?",
     "path-to-regexp-v8": "/foo{/:_1}",
     [shouldMatch]: ["/foo", "/foo/", "/foo/a"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo/a/b", "/foo/a/b/c"],
   },
   {
-    rou3: "/foo/:_1",
-    "next-fs": "/foo/[_1]",
+    rou3: "/foo/**:_1",
+    "next-fs": "/foo/[..._1]",
     "path-to-regexp-v6": {
       in: ["/foo/(.+)"],
-      out: [["/foo/:_1"]],
+      out: [["/foo/:_1+"]],
     },
-    "path-to-regexp-v8": "/foo/:_1",
-    [shouldMatch]: ["/foo/a", "/foo/b"],
+    "path-to-regexp-v8": "/foo/*_1",
+    [shouldMatch]: ["/foo/a", "/foo/b", "/foo/a/b", "/foo/a/b/c"],
+    [shouldNotMatch]: ["/a", "/a/b"],
   },
   {
     rou3: "/foo/*",
@@ -87,6 +111,7 @@ export const routes = prepare([
       out: [["/foo{/:foo}"], ["/foo{/:_1}"]],
     },
     [shouldMatch]: ["/foo", "/foo/", "/foo/a"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo/a/b", "/foo/a/b/c"],
   },
   {
     rou3: "/foo/**",
@@ -102,6 +127,7 @@ export const routes = prepare([
       "/foo/a/b/",
       "/foo/a/b/c/d/e/f",
     ],
+    [shouldNotMatch]: ["/a", "/a/b"],
   },
   {
     rou3: "/foo/**:foo",
@@ -115,6 +141,7 @@ export const routes = prepare([
       "/foo/a/b/",
       "/foo/a/b/c/d/e/f",
     ],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo", "/foo/"],
   },
   {
     rou3: {
@@ -133,6 +160,17 @@ export const routes = prepare([
       out: [["/foo{/:_1}/bar"], ["/foo/bar", "/foo/:_1/bar"]],
     },
     [shouldMatch]: ["/foo/bar", "/foo/bar/", "/foo/a/bar", "/foo/a/bar/"],
+    [shouldNotMatch]: [
+      "/a",
+      "/a/b",
+      "/foo/a/b",
+      "/foo/a/b/c",
+      "/foo/bar/a",
+      "/foo/bar/a/b",
+      "/foo/a/bar/b",
+      "/foo/a/b/bar/c",
+      "/foo/a/bar/b/c",
+    ],
   },
   {
     rou3: {
@@ -158,6 +196,17 @@ export const routes = prepare([
       "/foo/bar/a/b/c",
       "/foo/a/bar/a",
       "/foo/a/bar/a/b/c",
+    ],
+    [shouldNotMatch]: [
+      "/a",
+      "/a/b",
+      "/foo/a/b",
+      "/foo/a/b/c",
+      "/foo/bar",
+      "/foo/bar/",
+      "/foo/a/bar",
+      "/foo/a/bar/",
+      "/foo/a/b/bar/c",
     ],
   },
 ]);
@@ -187,6 +236,7 @@ function prepare(
     ) as unknown as ResolvedFixture;
 
     resolvedFixture[shouldMatch] = fixture[shouldMatch];
+    resolvedFixture[shouldNotMatch] = fixture[shouldNotMatch];
     Object.defineProperty(resolvedFixture, "toString", {
       enumerable: false,
       configurable: false,

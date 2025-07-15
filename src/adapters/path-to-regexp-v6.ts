@@ -9,12 +9,12 @@ const mapper = new SegmentMapper()
     // but convert-route does not handle leading slashes as a special case
     optional: true,
     catchAll: {
-      greedy: false,
+      greedy: true,
     },
   }))
   .match(/^\(\.\+\)$/, () => ({
     catchAll: {
-      greedy: false,
+      greedy: true,
     },
   }))
   .match(/\(.*\)/, () => {

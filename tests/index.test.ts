@@ -14,7 +14,7 @@ import {
 } from "../src/adapters/path-to-regexp-v8.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import type { RouteIR } from "../src/types.js";
-import { type Route, routes, shouldMatch } from "./fixtures.js";
+import { type Route, routes, shouldMatch, shouldNotMatch } from "./fixtures.js";
 
 function from(name: string) {
   switch (name) {
@@ -99,6 +99,13 @@ describe.for(routes)("%s", (fixture) => {
       `${route1.in.join(",")} should match %s`,
       (path) => {
         expect(match(name1, route1.in)(path)).toBe(true);
+      },
+    );
+
+    test.for(fixture[shouldNotMatch])(
+      `${route1.in.join(",")} should not match %s`,
+      (path) => {
+        expect(match(name1, route1.in)(path)).toBe(false);
       },
     );
   });

@@ -48,14 +48,12 @@ export function toRou3(route: RouteIR): string[] {
   let i = 0;
   const response = route.params.map((r) => {
     if (r.catchAll?.greedy) {
-      // ** is optional, **:name is not
-      return r.catchAll.name && !r.optional ? `**:${r.catchAll.name}` : "**";
+      return !r.optional ? `**:${r.catchAll.name || `_${++i}`}` : "**";
     }
     if (r.catchAll && !r.catchAll.greedy) {
-      const name = r.catchAll.name || `_${++i}`;
       // Optional parameters in rou3 are only supported if they are in the last segment.
       // If we found one in another segment, we must return a new route without this segment.
-      return r.optional ? [null, `*`] : `:${name}`;
+      return r.optional ? [null, `*`] : `:${r.catchAll.name || `_${++i}`}`;
     }
     return r.value;
   });
