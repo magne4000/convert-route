@@ -9,7 +9,7 @@ function stripValue(segment: string, separator: string | null) {
   return isOptional(segment, separator) ? segment.slice(0, -1) : segment;
 }
 
-const mapper = new SegmentMapper(/({\/)|\//)
+const mapper = new SegmentMapper(/({\/|\/)/)
   .match(/^\*(.+)$/, (match, segment, separator) => ({
     optional: isOptional(segment, separator),
     catchAll: {
