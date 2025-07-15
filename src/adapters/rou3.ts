@@ -1,9 +1,12 @@
 import type { RouteIR } from "../types.js";
+import { join } from "../utils/join.js";
 import { SegmentMapper } from "../utils/mapper.js";
 
+// TODO support paths like "/path/get-:file.:ext"
 const mapper = new SegmentMapper()
-  .match(/^\*$/, () => ({
-    optional: true,
+  .match(/^\*$/, (_, __, ___, index, array) => ({
+    // only considered optional if it's the last segment
+    optional: index === array.length - 1,
     catchAll: {
       greedy: false,
     },
@@ -22,7 +25,6 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^\*\*:(.+)$/, (match) => ({
-    optional: true,
     catchAll: {
       greedy: true,
       name: match[1],
@@ -42,21 +44,20 @@ export function fromRou3(path: string): RouteIR {
   };
 }
 
-export function toRou3(route: RouteIR): string {
+export function toRou3(route: RouteIR): string[] {
   let i = 0;
-  return route.params
-    .map((r) => {
-      if (r.catchAll?.greedy) {
-        // greedy catchAll is always optional in rou3
-        return r.catchAll.name ? `**:${r.catchAll.name}` : "**";
-      }
-      if (r.catchAll && !r.catchAll.greedy && !r.catchAll.name) {
-        return r.optional ? `*` : `:_${++i}`;
-      }
-      if (r.catchAll && !r.catchAll.greedy && r.catchAll.name) {
-        return r.optional ? `*:${r.catchAll.name}` : `:${r.catchAll.name}`;
-      }
-      return r.value;
-    })
-    .join("/");
+  const response = route.params.map((r) => {
+    if (r.catchAll?.greedy) {
+      // ** is optional, **:name is not
+      return r.catchAll.name && !r.optional ? `**:${r.catchAll.name}` : "**";
+    }
+    if (r.catchAll && !r.catchAll.greedy) {
+      const name = r.catchAll.name || `_${++i}`;
+      // Optional parameters in rou3 are only supported if they are in the last segment.
+      // If we found one in another segment, we must return a new route without this segment.
+      return r.optional ? [null, `*`] : `:${name}`;
+    }
+    return r.value;
+  });
+  return join(response);
 }

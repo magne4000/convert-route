@@ -1,5 +1,9 @@
+import nextRouteMatcher from "next-route-matcher";
+import { match as matchPtrv6 } from "path-to-regexpv6";
+import { match as matchPtrv8 } from "path-to-regexpv8";
+import { addRoute, createRouter, findRoute } from "rou3";
 import { describe, expect, test } from "vitest";
-import { fromFs, toFs } from "../src/adapters/fs.js";
+import { fromNextFs } from "../src/adapters/next-fs.js";
 import {
   fromPathToRegexpV6,
   toPathToRegexpV6,
@@ -9,14 +13,15 @@ import {
   toPathToRegexpV8,
 } from "../src/adapters/path-to-regexp-v8.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
-import { routes } from "./fixtures.js";
+import type { RouteIR } from "../src/types.js";
+import { type Route, routes, shouldMatch } from "./fixtures.js";
 
 function from(name: string) {
   switch (name) {
     case "rou3":
       return fromRou3;
-    case "fs":
-      return fromFs;
+    case "next-fs":
+      return fromNextFs;
     case "path-to-regexp-v6":
       return fromPathToRegexpV6;
     case "path-to-regexp-v8":
@@ -26,34 +31,75 @@ function from(name: string) {
   }
 }
 
-function to(name: string) {
+function to(name: string): null | ((route: RouteIR) => string[]) {
   switch (name) {
     case "rou3":
       return toRou3;
-    case "fs":
-      return toFs;
+    case "next-fs":
+      return null;
     case "path-to-regexp-v6":
-      return toPathToRegexpV6;
+      return (route) => [toPathToRegexpV6(route)];
     case "path-to-regexp-v8":
-      return toPathToRegexpV8;
+      return (route) => [toPathToRegexpV8(route)];
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
 }
 
-describe.for(routes)("$key", (fixture) => {
-  const entries = Object.entries(fixture) as [string, string | string[]][];
+function match(name: string, routes: string[]): (path: string) => boolean {
+  switch (name) {
+    case "rou3": {
+      const router = createRouter();
+      routes.forEach((route) =>
+        addRoute(router, "GET", route, { payload: route }),
+      );
+      return (path) => Boolean(findRoute(router, "GET", path));
+    }
+    case "next-fs": {
+      const fn = nextRouteMatcher(routes);
+      return (path) => Boolean(fn(path));
+    }
+    case "path-to-regexp-v6": {
+      const fns = routes.map((route) => matchPtrv6(route));
+      return (path) => {
+        return fns.map((fn) => fn(path)).some(Boolean);
+      };
+    }
+    case "path-to-regexp-v8": {
+      const fns = routes.map((route) => matchPtrv8(route));
+      return (path) => {
+        return fns.map((fn) => fn(path)).some(Boolean);
+      };
+    }
+
+    default:
+      throw new Error(`Unknown adapter: ${name}`);
+  }
+}
+
+describe.for(routes)("%s", (fixture) => {
+  const entries = Object.entries(fixture) as [string, Route][];
 
   describe.for(entries)("$0", ([name1, route1]) => {
-    const ir1 = from(name1)(typeof route1 === "string" ? route1 : route1[0]);
+    const ir1 = route1.in.map((x) => from(name1)(x));
 
-    test.for(entries)("$0", ([name2, route2]) => {
-      // route1 to route2
-      if (Array.isArray(route2)) {
-        expect(to(name2)(ir1)).oneOf(route2);
-      } else {
-        expect(to(name2)(ir1)).toBe(route2);
+    test.for(entries)("$0", ([name2, route2], context) => {
+      const toName2 = to(name2);
+      if (toName2 === null) {
+        context.skip();
+        return;
       }
+
+      // route1 to route2
+      const oneOf = ir1.flatMap((x) => toName2(x));
+      expect(route2.out).toContainEqual(oneOf);
     });
+
+    test.for(fixture[shouldMatch])(
+      `${route1.in.join(",")} should match %s`,
+      (path) => {
+        expect(match(name1, route1.in)(path)).toBe(true);
+      },
+    );
   });
 });

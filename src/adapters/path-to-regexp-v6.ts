@@ -1,5 +1,6 @@
 import type { RouteIR } from "../types.js";
 import { ConvertRouteError } from "../utils/error.js";
+import { join } from "../utils/join.js";
 import { SegmentMapper } from "../utils/mapper.js";
 
 const mapper = new SegmentMapper()
@@ -62,8 +63,8 @@ export function fromPathToRegexpV6(path: string): RouteIR {
 
 export function toPathToRegexpV6(route: RouteIR): string {
   let i = 0;
-  return route.params
-    .map((r) => {
+  return join(
+    route.params.map((r) => {
       if (r.catchAll?.greedy) {
         const name = r.catchAll.name || `_${++i}`;
         return r.optional ? `:${name}*` : `:${name}+`;
@@ -73,6 +74,6 @@ export function toPathToRegexpV6(route: RouteIR): string {
         return r.optional ? `:${name}?` : `:${name}`;
       }
       return r.value;
-    })
-    .join("/");
+    }),
+  )[0];
 }

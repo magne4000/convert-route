@@ -12,6 +12,9 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "2.1.1",
+    "next-route-matcher": "^1.0.2",
+    "path-to-regexpv6": "npm:path-to-regexp@^6.3.0",
+    "path-to-regexpv8": "npm:path-to-regexp@^8.2.0",
     "rou3": "^0.5.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"

@@ -4,6 +4,8 @@ export type GetRouteParam = (
   match: RegExpMatchArray,
   segment: string,
   separator: string | null,
+  index: number,
+  array: string[],
 ) => Omit<RouteParam, "value"> & { value?: string };
 
 export class SegmentMapper {
@@ -19,9 +21,15 @@ export class SegmentMapper {
   exec(path: string): RouteParam[] {
     let match: RegExpMatchArray | null = null;
     let previousSeparator: string | null = null;
-    return path
-      .split(this.separator)
-      .map((segment) => {
+    let sliced = path.split(this.separator);
+    if (sliced[0] === "") {
+      sliced = sliced.slice(1);
+    }
+    if (sliced[sliced.length - 1] === "") {
+      sliced = sliced.slice(0, -1);
+    }
+    return sliced
+      .map((segment, index, array) => {
         if (typeof segment === "undefined") {
           previousSeparator = "/";
           return false;
@@ -38,7 +46,7 @@ export class SegmentMapper {
           if ((match = segment.match(pattern)) !== null) {
             return {
               value: segment,
-              ...getParam(match, segment, previousSeparator),
+              ...getParam(match, segment, previousSeparator, index, array),
             };
           }
         }

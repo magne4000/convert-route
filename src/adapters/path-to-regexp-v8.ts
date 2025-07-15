@@ -40,8 +40,8 @@ export function fromPathToRegexpV8(path: string): RouteIR {
 
 export function toPathToRegexpV8(route: RouteIR): string {
   let i = 0;
+  if (route.params.length === 0) return "/";
   return route.params
-    .slice(1)
     .map((r) => {
       if (r.catchAll?.greedy) {
         const name = r.catchAll.name || `_${++i}`;
