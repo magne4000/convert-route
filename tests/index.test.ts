@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { fromFs, toFs } from "../src/adapters/fs.js";
+import {
+  fromPathToRegexpV6,
+  toPathToRegexpV6,
+} from "../src/adapters/path-to-regexp-v6.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import { routes } from "./fixtures.js";
 
@@ -9,6 +13,8 @@ function from(name: string) {
       return fromRou3;
     case "fs":
       return fromFs;
+    case "path-to-regexp-v6":
+      return fromPathToRegexpV6;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
@@ -20,6 +26,8 @@ function to(name: string) {
       return toRou3;
     case "fs":
       return toFs;
+    case "path-to-regexp-v6":
+      return toPathToRegexpV6;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
