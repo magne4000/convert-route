@@ -4,6 +4,10 @@ import {
   fromPathToRegexpV6,
   toPathToRegexpV6,
 } from "../src/adapters/path-to-regexp-v6.js";
+import {
+  fromPathToRegexpV8,
+  toPathToRegexpV8,
+} from "../src/adapters/path-to-regexp-v8.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import { routes } from "./fixtures.js";
 
@@ -15,6 +19,8 @@ function from(name: string) {
       return fromFs;
     case "path-to-regexp-v6":
       return fromPathToRegexpV6;
+    case "path-to-regexp-v8":
+      return fromPathToRegexpV8;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
@@ -28,6 +34,8 @@ function to(name: string) {
       return toFs;
     case "path-to-regexp-v6":
       return toPathToRegexpV6;
+    case "path-to-regexp-v8":
+      return toPathToRegexpV8;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
