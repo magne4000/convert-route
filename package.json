@@ -22,7 +22,7 @@
   "sideEffects": false,
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",
-    "changeset": "^0.2.6",
+    "@changesets/cli": "^2.29.5",
     "next-route-matcher": "^1.0.2",
     "path-to-regexpv6": "npm:path-to-regexp@^6.3.0",
     "path-to-regexpv8": "npm:path-to-regexp@^8.2.0",
