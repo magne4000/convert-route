@@ -40,5 +40,6 @@
     "./path-to-regexp-v6": "./dist/path-to-regexp-v6.js",
     "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
     "./next-fs": "./dist/next-fs.js"
-  }
+  },
+  "packageManager": "pnpm@10.11.0"
 }
