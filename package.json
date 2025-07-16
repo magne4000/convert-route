@@ -1,6 +1,6 @@
 {
   "name": "convert-route",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Convert between rou3, Next.js, and path-to-regexp route patterns",
   "main": "dist/index.js",
   "scripts": {
