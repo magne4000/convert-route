@@ -64,11 +64,11 @@ import { fromNextFs } from 'convert-route/next-fs';
 ### path-to-regexp v6
 
 ```ts
-import { fromPathToRegexpV6, toPathToRegexpV6 } from 'convert-route/next-fs';
+import { fromPathToRegexpV6, toPathToRegexpV6 } from 'convert-route/path-to-regexp-v6';
 ```
 
 ### path-to-regexp v8
 
 ```ts
-import { fromPathToRegexpV8, toPathToRegexpV8 } from 'convert-route/next-fs';
+import { fromPathToRegexpV8, toPathToRegexpV8 } from 'convert-route/path-to-regexp-v8';
 ```
