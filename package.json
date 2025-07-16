@@ -1,22 +1,44 @@
 {
   "name": "convert-route",
-  "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Convert between rou3, Next.js, and path-to-regexp route patterns",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "vitest"
+    "build": "tsdown -c tsdown.config.ts",
+    "test": "vitest",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "release": "pnpm run build && changeset version && pnpm i && pnpm publish -r"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "rou3",
+    "path-to-regexp",
+    "next-fs"
+  ],
+  "author": "Joël Charles <joel.charles91@gmail.com>",
+  "repository": "https://github.com/magne4000/convert-route",
   "license": "MIT",
+  "sideEffects": false,
   "devDependencies": {
-    "@biomejs/biome": "2.1.1",
+    "@biomejs/biome": "^2.1.1",
+    "changeset": "^0.2.6",
     "next-route-matcher": "^1.0.2",
     "path-to-regexpv6": "npm:path-to-regexp@^6.3.0",
     "path-to-regexpv8": "npm:path-to-regexp@^8.2.0",
     "rou3": "^0.5.1",
+    "tsdown": "^0.12.9",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./rou3": "./dist/rou3.js",
+    "./path-to-regexp-v6": "./dist/path-to-regexp-v6.js",
+    "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
+    "./next-fs": "./dist/next-fs.js"
   }
 }
