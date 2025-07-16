@@ -8,7 +8,7 @@
     "test": "vitest",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "release": "pnpm run build && changeset version && pnpm i && pnpm publish -r"
+    "release": "pnpm run build && changeset version && changeset tag && pnpm i && pnpm publish -r"
   },
   "type": "module",
   "keywords": [
