@@ -1,7 +1,7 @@
 {
   "name": "convert-route",
   "version": "0.1.2",
-  "description": "Convert between rou3, Next.js, and path-to-regexp route patterns",
+  "description": "Convert between rou3, Next.js, path-to-regexp and RegExp route patterns",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsdown -c tsdown.config.ts",
