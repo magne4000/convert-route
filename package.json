@@ -21,15 +21,15 @@
   "license": "MIT",
   "sideEffects": false,
   "devDependencies": {
-    "@biomejs/biome": "^2.1.1",
-    "@changesets/cli": "^2.29.5",
+    "@biomejs/biome": "^2.3.7",
+    "@changesets/cli": "^2.29.7",
     "next-route-matcher": "^1.0.2",
     "path-to-regexpv6": "npm:path-to-regexp@^6.3.0",
-    "path-to-regexpv8": "npm:path-to-regexp@^8.2.0",
-    "rou3": "^0.5.1",
-    "tsdown": "^0.12.9",
-    "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "path-to-regexpv8": "npm:path-to-regexp@^8.3.0",
+    "rou3": "^0.7.10",
+    "tsdown": "^0.16.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist"
