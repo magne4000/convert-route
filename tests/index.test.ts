@@ -14,7 +14,14 @@ import {
 } from "../src/adapters/path-to-regexp-v8.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import type { RouteIR } from "../src/types.js";
-import { type Route, routes, shouldMatch, shouldNotMatch } from "./fixtures.js";
+import {
+  type FixtureAdapters,
+  type Route,
+  routes,
+  shouldMatch,
+  shouldNotMatch,
+} from "./fixtures.js";
+import { toRegexp } from "../src/adapters/regexp.js";
 
 function from(name: string) {
   switch (name) {
@@ -26,12 +33,16 @@ function from(name: string) {
       return fromPathToRegexpV6;
     case "path-to-regexp-v8":
       return fromPathToRegexpV8;
+    case "regexp":
+      return null;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
 }
 
-function to(name: string): null | ((route: RouteIR) => string[]) {
+function to(
+  name: keyof FixtureAdapters,
+): null | ((route: RouteIR) => RegExp | string[]) {
   switch (name) {
     case "rou3":
       return toRou3;
@@ -41,32 +52,43 @@ function to(name: string): null | ((route: RouteIR) => string[]) {
       return (route) => [toPathToRegexpV6(route)];
     case "path-to-regexp-v8":
       return (route) => [toPathToRegexpV8(route)];
+    case "regexp":
+      return toRegexp;
     default:
       throw new Error(`Unknown adapter: ${name}`);
   }
 }
 
-function match(name: string, routes: string[]): (path: string) => boolean {
+function match(
+  name: keyof FixtureAdapters,
+  routes: string[] | RegExp[],
+): (path: string) => boolean {
   switch (name) {
     case "rou3": {
       const router = createRouter();
-      routes.forEach((route) =>
-        addRoute(router, "GET", route, { payload: route }),
-      );
+      routes.forEach((route) => {
+        addRoute(router, "GET", route as string, { payload: route });
+      });
       return (path) => Boolean(findRoute(router, "GET", path));
     }
     case "next-fs": {
-      const fn = nextRouteMatcher(routes);
+      const fn = nextRouteMatcher(routes as string[]);
       return (path) => Boolean(fn(path));
     }
     case "path-to-regexp-v6": {
-      const fns = routes.map((route) => matchPtrv6(route));
+      const fns = routes.map((route) => matchPtrv6(route as string));
       return (path) => {
         return fns.map((fn) => fn(path)).some(Boolean);
       };
     }
     case "path-to-regexp-v8": {
-      const fns = routes.map((route) => matchPtrv8(route));
+      const fns = routes.map((route) => matchPtrv8(route as string));
+      return (path) => {
+        return fns.map((fn) => fn(path)).some(Boolean);
+      };
+    }
+    case "regexp": {
+      const fns = routes.map((route) => (route as RegExp).exec.bind(route));
       return (path) => {
         return fns.map((fn) => fn(path)).some(Boolean);
       };
@@ -78,35 +100,36 @@ function match(name: string, routes: string[]): (path: string) => boolean {
 }
 
 describe.for(routes)("%s", (fixture) => {
-  const entries = Object.entries(fixture) as [string, Route][];
+  const entries = Object.entries(fixture) as [keyof FixtureAdapters, Route][];
 
   describe.for(entries)("$0", ([name1, route1]) => {
-    const ir1 = route1.in.map((x) => from(name1)(x));
+    const fromName1 = from(name1);
+    if (fromName1) {
+      const ir1 = route1.in.map((x) => fromName1(x as string));
 
-    test.for(entries)("$0", ([name2, route2], context) => {
-      const toName2 = to(name2);
-      if (toName2 === null) {
-        context.skip();
-        return;
-      }
+      test.for(entries)("$0", ([name2, route2], context) => {
+        const toName2 = to(name2);
+        if (toName2 === null) {
+          context.skip();
+          return;
+        }
 
-      // route1 to route2
-      const oneOf = ir1.flatMap((x) => toName2(x));
-      expect(route2.out).toContainEqual(oneOf);
+        // route1 to route2
+        const oneOf = ir1.flatMap<string | RegExp>((x) => toName2(x));
+        expect(route2.out).toContainEqual(oneOf);
+      });
+    }
+
+    test.for(
+      fixture[shouldMatch],
+    )(`${route1.in.join(",")} should match %s`, (path) => {
+      expect(match(name1, route1.in)(path)).toBe(true);
     });
 
-    test.for(fixture[shouldMatch])(
-      `${route1.in.join(",")} should match %s`,
-      (path) => {
-        expect(match(name1, route1.in)(path)).toBe(true);
-      },
-    );
-
-    test.for(fixture[shouldNotMatch])(
-      `${route1.in.join(",")} should not match %s`,
-      (path) => {
-        expect(match(name1, route1.in)(path)).toBe(false);
-      },
-    );
+    test.for(
+      fixture[shouldNotMatch],
+    )(`${route1.in.join(",")} should not match %s`, (path) => {
+      expect(match(name1, route1.in)(path)).toBe(false);
+    });
   });
 });

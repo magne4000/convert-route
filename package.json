@@ -14,7 +14,8 @@
   "keywords": [
     "rou3",
     "path-to-regexp",
-    "next-fs"
+    "next-fs",
+    "regexp"
   ],
   "author": "Joël Charles <joel.charles91@gmail.com>",
   "repository": "https://github.com/magne4000/convert-route",
@@ -39,7 +40,8 @@
     "./rou3": "./dist/rou3.js",
     "./path-to-regexp-v6": "./dist/path-to-regexp-v6.js",
     "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
-    "./next-fs": "./dist/next-fs.js"
+    "./next-fs": "./dist/next-fs.js",
+    "./regexp": "./dist/regexp.js"
   },
   "packageManager": "pnpm@10.11.0"
 }
