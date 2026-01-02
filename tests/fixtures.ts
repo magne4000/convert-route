@@ -1,10 +1,58 @@
 import "urlpattern-polyfill";
+import type { RouteParam } from "../src/types.js";
+
 export const shouldMatch = Symbol.for("shouldMatch");
 export const shouldNotMatch = Symbol.for("shouldNotMatch");
 
+// Normalize IR params to ensure consistent optional property and property order
+export function normalizeIR(params: RouteParam[]): RouteParam[] {
+  return params.map((param) => {
+    // Build normalized object with consistent property order
+    const normalized: RouteParam = {
+      value: param.value,
+      optional: param.optional ?? false, // Always include, default to false
+    };
+
+    // Add catchAll if present, with consistent internal order
+    if (param.catchAll) {
+      normalized.catchAll = {
+        name: param.catchAll.name,
+        greedy: param.catchAll.greedy,
+      };
+    }
+
+    return normalized;
+  });
+}
+
+// New fixture types for two-section architecture
+export interface InputFixture {
+  pattern: string | RegExp | URLPattern | URLPatternInit;
+  format: "rou3" | "next-fs" | "path-to-regexp-v6" | "path-to-regexp-v8" | "urlpattern" | "urlpatterninit";
+  ir: { params: RouteParam[] }; // Normalized IR
+}
+
+export interface OutputFixture {
+  ir: { params: RouteParam[] }; // Normalized IR
+  outputs: {
+    rou3?: string | string[];
+    "next-fs"?: string | string[];
+    "path-to-regexp-v6"?: string | string[];
+    "path-to-regexp-v8"?: string | string[];
+    regexp?: RegExp | RegExp[];
+    urlpattern?: string | string[] | URLPattern | URLPattern[];
+    urlpatterninit?: URLPatternInit | URLPatternInit[];
+  };
+}
+
+interface MatchTestFixture {
+  [shouldMatch]: string[];
+  [shouldNotMatch]: string[];
+}
+
+// Legacy types (to be removed after migration)
 type FixtureRouteValue = string | RegExp | URLPattern | URLPatternInit;
 type FixtureInValue = FixtureRouteValue | Route;
-
 
 export interface FixtureAdapters {
   rou3: FixtureInValue;
@@ -380,3 +428,150 @@ function prepare(
     return resolvedFixture;
   });
 }
+
+// ============================================================================
+// NEW TWO-SECTION FIXTURE SYSTEM
+// ============================================================================
+
+// Section 1: Pattern → IR (Input Fixtures)
+// Tests that parsing patterns from each format produces correct normalized IRs
+export const inputFixtures: InputFixture[] = [
+  // Root path "/"
+  {
+    pattern: "/",
+    format: "rou3",
+    ir: { params: [] },
+  },
+  {
+    pattern: "/",
+    format: "path-to-regexp-v8",
+    ir: { params: [] },
+  },
+  {
+    pattern: "/",
+    format: "path-to-regexp-v6",
+    ir: { params: [] },
+  },
+  
+  // Simple static path "/foo"
+  {
+    pattern: "/foo",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+      ],
+    },
+  },
+  {
+    pattern: "/foo",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+      ],
+    },
+  },
+  
+  // Named parameter "/foo/:id"
+  {
+    pattern: "/foo/:id",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { 
+          value: ":id", 
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    },
+  },
+  {
+    pattern: "/foo/:id",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { 
+          value: ":id", 
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    },
+  },
+];
+
+// Section 2: IR → Pattern (Output Fixtures)
+// Tests that IRs generate correct patterns for each format
+export const outputFixtures: OutputFixture[] = [
+  // Root path
+  {
+    ir: { params: [] },
+    outputs: {
+      rou3: "/",
+      "path-to-regexp-v8": "/",
+      "path-to-regexp-v6": "/",
+      regexp: /^\/\/?$/,
+      urlpattern: "/{/}?",
+      urlpatterninit: { pathname: "/{/}?" },
+    },
+  },
+  
+  // Simple static path "/foo"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+      ],
+    },
+    outputs: {
+      rou3: "/foo",
+      "path-to-regexp-v8": "/foo",
+      "path-to-regexp-v6": "/foo",
+      regexp: /^\/foo\/?$/,
+      urlpattern: "/foo{/}?",
+      urlpatterninit: { pathname: "/foo{/}?" },
+    },
+  },
+  
+  // Named parameter "/foo/:id"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { 
+          value: ":id", 
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/:id",
+      "path-to-regexp-v8": "/foo/:id",
+      "path-to-regexp-v6": "/foo/:id",
+      regexp: /^\/foo\/(?<id>[^/]+)\/?$/,
+      urlpattern: "/foo/:id{/}?",
+      urlpatterninit: { pathname: "/foo/:id{/}?" },
+    },
+  },
+];
+
+// Match test fixtures (shared between old and new systems)
+export const matchTestFixtures: MatchTestFixture[] = [
+  {
+    [shouldMatch]: ["/"],
+    [shouldNotMatch]: ["/a", "/a/b"],
+  },
+  {
+    [shouldMatch]: ["/foo"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo/a", "/foo/a/b"],
+  },
+  {
+    [shouldMatch]: ["/foo/a", "/foo/b"],
+    [shouldNotMatch]: ["/a", "/a/b", "/foo", "/foo/", "/foo/bar/a", "/foo/bar/a/b"],
+  },
+];
