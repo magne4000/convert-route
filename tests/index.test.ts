@@ -160,3 +160,122 @@ describe.for(routes)("%s", (fixture) => {
     });
   });
 });
+
+// ============================================================================
+// NEW TWO-SECTION FIXTURE TESTS
+// ============================================================================
+
+import {
+  inputFixtures,
+  outputFixtures,
+  normalizeIR,
+} from "./fixtures.js";
+
+describe("Two-Section Fixture Tests", () => {
+  describe("Pattern → IR (Input Fixtures)", () => {
+    test.for(inputFixtures)(
+      "parse $format pattern $pattern to correct IR",
+      ({ pattern, format, ir: expectedIr }) => {
+        const fromFn = from(format);
+        
+        if (!fromFn) {
+          // Formats without parsing (e.g., regexp) are not tested here
+          return;
+        }
+
+        // Convert pattern to appropriate type
+        let inputPattern: string | URLPattern | URLPatternInit;
+        if (format === "urlpattern" && typeof pattern === "string") {
+          inputPattern = new URLPattern({ pathname: pattern });
+        } else if (format === "urlpatterninit" && typeof pattern === "string") {
+          inputPattern = { pathname: pattern };
+        } else {
+          inputPattern = pattern as string;
+        }
+
+        // Parse the pattern
+        const result = fromFn(inputPattern as any);
+        
+        // Normalize the result IR for consistent comparison
+        const normalizedResult = {
+          pattern: result.pattern,
+          params: normalizeIR(result.params),
+        };
+
+        // Normalize expected IR
+        const normalizedExpected = {
+          pattern: normalizedResult.pattern, // Use the pattern from result
+          params: normalizeIR(expectedIr.params),
+        };
+
+        // Compare normalized params only (pattern can vary)
+        expect(normalizedResult.params).toEqual(normalizedExpected.params);
+      },
+    );
+  });
+
+  describe("IR → Pattern (Output Fixtures)", () => {
+    test.for(outputFixtures)(
+      "convert IR to correct patterns for all formats",
+      ({ ir, outputs }) => {
+        // Test each output format
+        for (const [formatName, expectedOutput] of Object.entries(outputs)) {
+          if (expectedOutput === undefined) continue;
+
+          const toFn = to(formatName as keyof FixtureAdapters);
+          
+          if (!toFn) {
+            // Format doesn't support generation (e.g., next-fs)
+            continue;
+          }
+
+          // Create RouteIR from fixture
+          const route: RouteIR = {
+            pattern: "", // Will be set by toFn
+            params: ir.params,
+          };
+
+          // Generate output
+          const result = toFn(route);
+
+          // Normalize expected output to array for comparison
+          const expectedArray = Array.isArray(expectedOutput)
+            ? expectedOutput
+            : [expectedOutput];
+
+          // Compare based on format type
+          if (formatName === "regexp") {
+            // For regexp, compare as RegExp
+            const resultRegexps = Array.isArray(result) ? result : [result];
+            const expectedRegexps = expectedArray as RegExp[];
+            
+            // Check if result matches one of the expected patterns
+            const matches = resultRegexps.some((r) =>
+              expectedRegexps.some((e) => r.toString() === e.toString()),
+            );
+            expect(matches).toBe(true);
+          } else if (formatName === "urlpatterninit") {
+            // For urlpatterninit, compare pathname property
+            const resultInit = (Array.isArray(result) ? result[0] : result) as URLPatternInit;
+            const expectedInit = expectedArray[0] as URLPatternInit;
+            expect(resultInit.pathname).toBe(expectedInit.pathname);
+          } else {
+            // For string outputs (rou3, path-to-regexp, urlpattern)
+            const resultStrings = Array.isArray(result) ? result : [result];
+            
+            if (expectedArray.length === 1) {
+              // Single expected output
+              expect(resultStrings).toContain(expectedArray[0]);
+            } else {
+              // Multiple possible outputs - result should match one
+              const matches = resultStrings.some((r) =>
+                expectedArray.includes(r),
+              );
+              expect(matches).toBe(true);
+            }
+          }
+        }
+      },
+    );
+  });
+});

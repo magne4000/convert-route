@@ -593,7 +593,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+        { value: ":_1?", optional: true, catchAll: { name: "_1", greedy: false } },
       ],
     },
   },
@@ -605,7 +605,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+        { value: "*_1", optional: false, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -617,7 +617,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+        { value: "**:_1", optional: false, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -629,7 +629,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+        { value: "*_1", optional: true, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -641,7 +641,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+        { value: "**", optional: true, catchAll: { name: undefined, greedy: true } },
       ],
     },
   },
@@ -653,7 +653,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+        { value: ":_1*", optional: true, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -665,7 +665,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+        { value: ":_1?", optional: true, catchAll: { name: "_1", greedy: false } },
       ],
     },
   },
@@ -677,7 +677,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+        { value: ":_1+", optional: false, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -689,7 +689,7 @@ export const inputFixtures: InputFixture[] = [
     ir: {
       params: [
         { value: "foo", optional: false },
-        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+        { value: ":_1*", optional: true, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
