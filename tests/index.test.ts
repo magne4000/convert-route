@@ -1,7 +1,7 @@
 import "urlpattern-polyfill";
 import type { RouteParam, RouteIR } from "../src/types.js";
 import { describe, expect, test } from "vitest";
-import { toPathToRegexpV6 } from "../src/adapters/path-to-regexp-v6.js";
+import { fromPathToRegexpV6, toPathToRegexpV6 } from "../src/adapters/path-to-regexp-v6.js";
 import {
   fromPathToRegexpV8,
   toPathToRegexpV8,
@@ -34,22 +34,17 @@ function normalizeIR(params: RouteParam[]): RouteParam[] {
 }
 
 // Type-safe test helpers to ensure complete coverage
-// Define all possible formats for Pattern → IR
-type PatternToIRFormat = "rou3" | "path-to-regexp-v8" | "urlpattern" | "urlpatterninit" | "nextfs";
-
-// Define all possible formats for IR → Pattern  
-type IRToPatternFormat = "rou3" | "path-to-regexp-v6" | "path-to-regexp-v8" | "regexp" | "urlpattern" | "urlpatterninit";
-
-// For Pattern → IR: ALL formats required (no optional properties)
+// For Pattern → IR: ALL 6 formats required (including path-to-regexp-v6!)
 type PatternToIRTests = {
   rou3: () => void;
+  "path-to-regexp-v6": () => void;
   "path-to-regexp-v8": () => void;
   urlpattern: () => void;
   urlpatterninit: () => void;
   nextfs: () => void;
 };
 
-// For IR → Pattern: ALL 6 formats required (no optional properties)
+// For IR → Pattern: ALL 6 formats required
 type IRToPatternTests = {
   rou3: () => void;
   "path-to-regexp-v6": () => void;
@@ -63,6 +58,7 @@ type IRToPatternTests = {
 function testPatternToIR(pattern: string, tests: PatternToIRTests): void {
   describe(pattern, () => {
     test("rou3", tests.rou3);
+    test("path-to-regexp-v6", tests["path-to-regexp-v6"]);
     test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
     test("urlpattern", tests.urlpattern);
     test("urlpatterninit", tests.urlpatterninit);
@@ -73,14 +69,12 @@ function testPatternToIR(pattern: string, tests: PatternToIRTests): void {
 // Helper to test IR → Pattern with compile-time verification
 function testIRToPattern(pattern: string, ir: RouteIR, tests: IRToPatternTests): void {
   describe(pattern, () => {
-    test("generates correctly for all formats", () => {
-      tests.rou3();
-      tests["path-to-regexp-v6"]();
-      tests["path-to-regexp-v8"]();
-      tests.regexp();
-      tests.urlpattern();
-      tests.urlpatterninit();
-    });
+    test("rou3", tests.rou3);
+    test("path-to-regexp-v6", tests["path-to-regexp-v6"]);
+    test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
+    test("regexp", tests.regexp);
+    test("urlpattern", tests.urlpattern);
+    test("urlpatterninit", tests.urlpatterninit);
   });
 }
 
