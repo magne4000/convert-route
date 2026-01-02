@@ -33,6 +33,81 @@ function normalizeIR(params: RouteParam[]): RouteParam[] {
   });
 }
 
+// Type-safe test helpers to ensure complete coverage
+// Define all possible formats for Pattern → IR
+type PatternToIRFormat = "rou3" | "path-to-regexp-v8" | "urlpattern" | "urlpatterninit" | "nextfs";
+
+// Define all possible formats for IR → Pattern  
+type IRToPatternFormat = "rou3" | "path-to-regexp-v6" | "path-to-regexp-v8" | "regexp" | "urlpattern" | "urlpatterninit";
+
+// Track which patterns have been tested for Pattern → IR
+type TestedPatternToIR = 
+  | "/" 
+  | "/foo"
+  | "/foo/bar"
+  | "/foo/:id"
+  | "/foo/:foo/bar/:bar"
+  | "/foo/*"
+  | "/foo/**:_1"
+  | "/foo/**"
+  | "/foo{/:_1}/bar";
+
+// Track which patterns have been tested for IR → Pattern
+type TestedIRToPattern = 
+  | "/"
+  | "/foo" 
+  | "/foo/bar"
+  | "/foo/:id"
+  | "/foo/*"
+  | "/foo/**:_1"
+  | "/foo/**"
+  | "/foo{/:_1}/bar"
+  | "/foo/:foo/bar/:bar";
+
+// For Pattern → IR: require rou3 and path-to-regexp-v8 at minimum, others optional
+type PatternToIRTests = {
+  rou3: () => void;
+  "path-to-regexp-v8": () => void;
+  urlpattern?: () => void;
+  urlpatterninit?: () => void;
+  nextfs?: () => void;
+};
+
+// For IR → Pattern: require all 6 formats
+type IRToPatternTests = {
+  rou3: () => void;
+  "path-to-regexp-v6": () => void;
+  "path-to-regexp-v8": () => void;
+  regexp: () => void;
+  urlpattern: () => void;
+  urlpatterninit: () => void;
+};
+
+// Helper to test Pattern → IR with compile-time verification
+function testPatternToIR(pattern: TestedPatternToIR, tests: PatternToIRTests): void {
+  describe(pattern, () => {
+    test("rou3", tests.rou3);
+    test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
+    if (tests.urlpattern) test("urlpattern", tests.urlpattern);
+    if (tests.urlpatterninit) test("urlpatterninit", tests.urlpatterninit);
+    if (tests.nextfs) test("nextfs", tests.nextfs);
+  });
+}
+
+// Helper to test IR → Pattern with compile-time verification
+function testIRToPattern(pattern: TestedIRToPattern, ir: RouteIR, tests: IRToPatternTests): void {
+  describe(pattern, () => {
+    test("generates correctly for all formats", () => {
+      tests.rou3();
+      tests["path-to-regexp-v6"]();
+      tests["path-to-regexp-v8"]();
+      tests.regexp();
+      tests.urlpattern();
+      tests.urlpatterninit();
+    });
+  });
+}
+
 describe("Pattern → IR (Parsing Tests)", () => {
   describe("/", () => {
     test("rou3", () => {
