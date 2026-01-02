@@ -69,8 +69,8 @@ export function toURLPatternInput(route: RouteIR): { pathname: string } {
   const v8Pathname = toPathToRegexpV8(route);
   const pathname = v8Pathname
     .replace(/\/\*(\w+)/g, "/:$1+") // /*param → /:param+
-    .replace(/\{\/\*(\w+)\}/g, ":$1*") // {/*param} → :param*
-    .replace(/\{\/:(\w+)\}/g, ":$1?"); // {/:param} → :param?
+    .replace(/\{\/\*(\w+)\}/g, "/:$1*") // {/*param} → /:param*
+    .replace(/\{\/:(\w+)\}/g, "/:$1?"); // {/:param} → /:param?
 
   return {
     pathname: pathname === "*" ? "/*" : pathname,
