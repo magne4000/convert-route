@@ -175,12 +175,12 @@ export const routes = prepare([
       out: [[/^\/foo\/?(?<_1>.*)\/?$/], [/^\/foo\/?(.*)\/?$/]],
     },
     urlpattern: {
-      in: [new URLPattern({ pathname: "/foo{/*_1}?" })],
-      out: [["/foo{/*_1}?"], ["/foo/:_1*"]],
+      in: [new URLPattern({ pathname: "/foo/:_1*" })],
+      out: [["/foo/:_1*"]],
     },
     urlpatterninit: {
-      in: [{ pathname: "/foo{/*_1}?" }],
-      out: [[{ pathname: "/foo{/*_1}?" }], [{ pathname: "/foo/:_1*" }]],
+      in: [{ pathname: "/foo/:_1*" }],
+      out: [[{ pathname: "/foo/:_1*" }]],
     },
     [shouldMatch]: [
       "/foo",

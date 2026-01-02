@@ -64,13 +64,13 @@ export function toURLPatternInput(route: RouteIR): { pathname: string } {
   // Convert path-to-regexp-v8 syntax to URLPattern syntax
   // path-to-regexp-v8 → URLPattern:
   // /*param  → /:param+  (required multi-segment)
-  // {/*param} → /:param* (optional multi-segment)
+  // {/*param} → /:param* (optional multi-segment) - must process before /*param
   // {/:param} → /:param? (optional single segment)
   const v8Pathname = toPathToRegexpV8(route);
   const pathname = v8Pathname
-    .replace(/\/\*(\w+)/g, "/:$1+") // /*param → /:param+
-    .replace(/\{\/\*(\w+)\}/g, "/:$1*") // {/*param} → /:param*
-    .replace(/\{\/:(\w+)\}/g, "/:$1?"); // {/:param} → /:param?
+    .replace(/\{\/\*(\w+)\}/g, "/:$1*") // {/*param} → /:param* (MUST be before /*param)
+    .replace(/\{\/:(\w+)\}/g, "/:$1?") // {/:param} → /:param?
+    .replace(/\/\*(\w+)/g, "/:$1+"); // /*param → /:param+ (after grouped forms)
 
   return {
     pathname: pathname === "*" ? "/*" : pathname,
