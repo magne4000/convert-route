@@ -472,6 +472,37 @@ export const inputFixtures: InputFixture[] = [
       ],
     },
   },
+  {
+    pattern: "/foo",
+    format: "path-to-regexp-v6",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+      ],
+    },
+  },
+  
+  // Two static segments "/foo/bar"
+  {
+    pattern: "/foo/bar",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: "bar", optional: false },
+      ],
+    },
+  },
+  {
+    pattern: "/foo/bar",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: "bar", optional: false },
+      ],
+    },
+  },
   
   // Named parameter "/foo/:id"
   {
@@ -499,6 +530,166 @@ export const inputFixtures: InputFixture[] = [
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
+      ],
+    },
+  },
+  {
+    pattern: "/foo/:id",
+    format: "path-to-regexp-v6",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { 
+          value: ":id", 
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    },
+  },
+  
+  // Multiple named parameters "/foo/:foo/bar/:bar"
+  {
+    pattern: "/foo/:foo/bar/:bar",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":foo", optional: false, catchAll: { name: "foo", greedy: false } },
+        { value: "bar", optional: false },
+        { value: ":bar", optional: false, catchAll: { name: "bar", greedy: false } },
+      ],
+    },
+  },
+  {
+    pattern: "/foo/:foo/bar/:bar",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":foo", optional: false, catchAll: { name: "foo", greedy: false } },
+        { value: "bar", optional: false },
+        { value: ":bar", optional: false, catchAll: { name: "bar", greedy: false } },
+      ],
+    },
+  },
+  
+  // Optional single segment "/foo{/:_1}" (path-to-regexp-v8)
+  {
+    pattern: "/foo{/:_1}",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+      ],
+    },
+  },
+  
+  // Optional single segment "/foo/:_1?" (path-to-regexp-v6)
+  {
+    pattern: "/foo/:_1?",
+    format: "path-to-regexp-v6",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+      ],
+    },
+  },
+  
+  // Required multi-segment (greedy) "/foo/*_1" (path-to-regexp-v8)
+  {
+    pattern: "/foo/*_1",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // Required multi-segment (greedy) "/foo/**:_1" (rou3)
+  {
+    pattern: "/foo/**:_1",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // Optional multi-segment (greedy) "/foo{/*_1}" (path-to-regexp-v8)
+  {
+    pattern: "/foo{/*_1}",
+    format: "path-to-regexp-v8",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // Optional multi-segment (greedy) "/foo/**" (rou3)
+  {
+    pattern: "/foo/**",
+    format: "rou3",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // Optional multi-segment (greedy) "/foo/:_1*" (path-to-regexp-v6)
+  {
+    pattern: "/foo/:_1*",
+    format: "path-to-regexp-v6",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // URLPattern: optional single segment "/foo/:_1?" 
+  {
+    pattern: "/foo/:_1?",
+    format: "urlpattern",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+      ],
+    },
+  },
+  
+  // URLPattern: required multi-segment "/foo/:_1+"
+  {
+    pattern: "/foo/:_1+",
+    format: "urlpattern",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+  },
+  
+  // URLPattern: optional multi-segment "/foo/:_1*"
+  {
+    pattern: "/foo/:_1*",
+    format: "urlpattern",
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
       ],
     },
   },
@@ -537,6 +728,24 @@ export const outputFixtures: OutputFixture[] = [
     },
   },
   
+  // Two static segments "/foo/bar"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: "bar", optional: false },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/bar",
+      "path-to-regexp-v8": "/foo/bar",
+      "path-to-regexp-v6": "/foo/bar",
+      regexp: /^\/foo\/bar\/?$/,
+      urlpattern: "/foo/bar{/}?",
+      urlpatterninit: { pathname: "/foo/bar{/}?" },
+    },
+  },
+  
   // Named parameter "/foo/:id"
   {
     ir: {
@@ -556,6 +765,116 @@ export const outputFixtures: OutputFixture[] = [
       regexp: /^\/foo\/(?<id>[^/]+)\/?$/,
       urlpattern: "/foo/:id{/}?",
       urlpatterninit: { pathname: "/foo/:id{/}?" },
+    },
+  },
+  
+  // Multiple named parameters "/foo/:foo/bar/:bar"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":foo", optional: false, catchAll: { name: "foo", greedy: false } },
+        { value: "bar", optional: false },
+        { value: ":bar", optional: false, catchAll: { name: "bar", greedy: false } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/:foo/bar/:bar",
+      "path-to-regexp-v8": "/foo/:foo/bar/:bar",
+      "path-to-regexp-v6": "/foo/:foo/bar/:bar",
+      regexp: /^\/foo\/(?<foo>[^/]+)\/bar\/(?<bar>[^/]+)\/?$/,
+      urlpattern: "/foo/:foo/bar/:bar{/}?",
+      urlpatterninit: { pathname: "/foo/:foo/bar/:bar{/}?" },
+    },
+  },
+  
+  // Optional single segment (named _1)
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/*",
+      "path-to-regexp-v8": "/foo{/:_1}",
+      "path-to-regexp-v6": "/foo/:_1?",
+      regexp: [/^\/foo\/?([^/]*)\/?$/, /^\/foo\/?(?<_1>[^/]*)\/?$/],
+      urlpattern: "/foo/:_1?{/}?",
+      urlpatterninit: { pathname: "/foo/:_1?{/}?" },
+    },
+  },
+  
+  // Required multi-segment (greedy, named _1)
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: false, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/**:_1",
+      "path-to-regexp-v8": "/foo/*_1",
+      "path-to-regexp-v6": "/foo/:_1+",
+      regexp: [/^\/foo\/(.+)\/?$/, /^\/foo\/(?<_1>.+)\/?$/],
+      urlpattern: "/foo/:_1+{/}?",
+      urlpatterninit: { pathname: "/foo/:_1+{/}?" },
+    },
+  },
+  
+  // Optional multi-segment (greedy, named _1)
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":_1", optional: true, catchAll: { name: "_1", greedy: true } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/**",
+      "path-to-regexp-v8": "/foo{/*_1}",
+      "path-to-regexp-v6": "/foo/:_1*",
+      regexp: [/^\/foo\/?(.*)\/?$/, /^\/foo\/?(?<_1>.*)\/?$/],
+      urlpattern: "/foo/:_1*{/}?",
+      urlpatterninit: { pathname: "/foo/:_1*{/}?" },
+    },
+  },
+  
+  // Optional single segment with custom name "foo"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":foo", optional: true, catchAll: { name: "foo", greedy: false } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/*",
+      "path-to-regexp-v8": "/foo{/:foo}",
+      "path-to-regexp-v6": "/foo/:foo?",
+      regexp: [/^\/foo\/?([^/]*)\/?$/, /^\/foo\/?(?<foo>[^/]*)\/?$/],
+      urlpattern: "/foo/:foo?{/}?",
+      urlpatterninit: { pathname: "/foo/:foo?{/}?" },
+    },
+  },
+  
+  // Required multi-segment (greedy) with custom name "foo"
+  {
+    ir: {
+      params: [
+        { value: "foo", optional: false },
+        { value: ":foo", optional: false, catchAll: { name: "foo", greedy: true } },
+      ],
+    },
+    outputs: {
+      rou3: "/foo/**:foo",
+      "path-to-regexp-v8": "/foo/*foo",
+      "path-to-regexp-v6": "/foo/:foo+",
+      regexp: /^\/foo\/(?<foo>.+)\/?$/,
+      urlpattern: "/foo/:foo+{/}?",
+      urlpatterninit: { pathname: "/foo/:foo+{/}?" },
     },
   },
 ];
