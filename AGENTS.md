@@ -159,117 +159,33 @@ Build outputs to `dist/` with:
 
 ### URLPattern Support
 
-The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format, with automatic trailing slash handling.
+The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format.
 
-**Architecture:**
-- **Dedicated SegmentMapper:** Custom implementation for URLPattern syntax (not based on path-to-regexp)
-- **Direct parsing:** Handles `:param`, `:param?`, `:param+`, `:param*` modifiers natively
-- **Trailing slash support:** Automatic `{/}?` suffix by default (opt-out available)
-
-**Key Conversions:**
-- path-to-regexp v8 `/*param` ↔ URLPattern `/:param+` (required multi-segment)
-- path-to-regexp v8 `{/*param}` ↔ URLPattern `/:param*` (optional multi-segment)
-- path-to-regexp v8 `{/:param}` ↔ URLPattern `/:param?` (optional single segment)
-
-**Trailing Slash Handling:**
-By default, the adapter appends `{/}?` to patterns to match both with and without trailing slashes, aligning with path-to-regexp v8 behavior:
-
-```typescript
-import { toURLPatternInput } from './adapters/urlpattern.js';
-
-// Default: trailing slash support enabled
-toURLPatternInput(route);
-// → { pathname: "/foo/:id{/}?" } (matches /foo/bar and /foo/bar/)
-
-// Opt-out: no trailing slash support
-toURLPatternInput(route, { trailingSlash: false });
-// → { pathname: "/foo/:id" } (matches only /foo/bar)
-```
-
-**URLPatternOptions Interface:**
-```typescript
-interface URLPatternOptions {
-  trailingSlash?: boolean; // default: true
-}
-```
+**Key Features:**
+- Dedicated SegmentMapper for URLPattern syntax (`:param`, `:param?`, `:param+`, `:param*`)
+- Automatic trailing slash support via `{/}?` suffix (default: true, opt-out available)
+- Conversion mappings:
+  - `/*param` (ptr v8) ↔ `:param+` (URLPattern) — required multi-segment
+  - `{/*param}` ↔ `:param*` — optional multi-segment
+  - `{/:param}` ↔ `:param?` — optional single segment
 
 **Functions:**
-- `fromURLPattern(pattern: URLPattern | URLPatternInit): RouteIR` - Parse URLPattern to IR
-- `toURLPattern(route: RouteIR, options?: URLPatternOptions): URLPattern` - Convert IR to URLPattern
-- `toURLPatternInput(route: RouteIR, options?: URLPatternOptions): URLPatternInit` - Convert IR to URLPatternInit
+- `fromURLPattern(pattern: URLPattern | URLPatternInit): RouteIR`
+- `toURLPattern(route: RouteIR, options?: URLPatternOptions): URLPattern`
+- `toURLPatternInput(route: RouteIR, options?: URLPatternOptions): URLPatternInit`
 
-**Known Limitations:**
-1. **Pathname only:** Only the `pathname` property is supported. Other URLPattern properties (protocol, hostname, port, username, password, search, hash) will throw `ConvertRouteError` if not default values.
-
-2. **RegExp groups:** Patterns with `hasRegExpGroups` are not supported and will throw `ConvertRouteError`.
-
-3. **Trailing slash behavior:** When `trailingSlash: false`, URLPattern behaves per spec (strict matching without trailing slash), which differs from path-to-regexp v8's permissive matching.
-
-**Type Definitions:**
-The package includes a global type declaration for URLPattern in `src/urlpattern.d.ts` that extends the `urlpattern-polyfill` types.
-
-**Testing:**
-See "Test Fixture Architecture" section below for how URLPattern fixtures are organized.
+**Limitations:**
+- Only `pathname` property supported (other URL parts throw `ConvertRouteError`)
+- Patterns with `hasRegExpGroups` not supported
 
 ### Test Fixture Architecture
 
-The test suite uses a **two-section fixture architecture** with all fixtures consolidated inline in a single test file for clarity and maintainability.
+Tests are organized in a two-section architecture with all fixtures inline in `tests/index.test.ts`:
 
-**Section 1: Pattern → IR (Input Tests)**
-Tests that parsing patterns from each format produces correct normalized IRs:
+**Section 1: Pattern → IR** (23 tests) - Validates parsing from each format to normalized IR
+**Section 2: IR → Pattern** (10 tests) - Validates generation from IR to each format
 
-```typescript
-// tests/index.test.ts - Pattern → IR tests (inline)
-test("rou3: /foo/:id → named parameter", () => {
-  const result = fromRou3("/foo/:id");
-  expect(normalizeIR(result.params)).toEqual([
-    { value: "foo", optional: false },
-    { value: ":id", optional: false, catchAll: { name: "id", greedy: false } }
-  ]);
-});
-```
-
-**Section 2: IR → Pattern (Output Tests)**
-Tests that IRs generate correct patterns for each format (one-to-many mapping):
-
-```typescript
-// tests/index.test.ts - IR → Pattern tests (inline)
-test("optional single segment → rou3:/foo/*, ptr8:/foo{/:_1}", () => {
-  const ir: RouteIR = {
-    pattern: "",
-    params: [
-      { value: "foo", optional: false },
-      { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } }
-    ]
-  };
-  
-  expect(toRou3(ir)).toContain("/foo/*");
-  expect(toPathToRegexpV8(ir)).toBe("/foo{/:_1}");
-  expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
-});
-```
-
-**IR Normalization:**
-The `normalizeIR()` function ensures consistent IR representation:
-- `optional` property always present (defaults to `false`)
-- Consistent property order: `value`, `optional`, `catchAll`
-- CatchAll with consistent order: `name`, `greedy`
-
-This eliminates ambiguity where different parsers produce structurally different but semantically identical IRs.
-
-**Test Organization:**
-- Single file: `tests/index.test.ts` (~450 lines, all tests and fixtures consolidated)
-- Pattern → IR tests: 23 tests validating parsing
-- IR → Pattern tests: 10 tests validating generation (60+ format-specific assertions)
-- No separate fixture file - all data inline for clarity
-
-**Benefits:**
-- **No indirection:** Fixtures defined where they're used
-- **Explicit expectations:** Each test declares the exact expected IR inline
-- **Clear failure diagnosis:** Test name and inline data show exactly what failed
-- **Easy extension:** Add new tests by copying and modifying inline data
-- **Single source:** One file contains all test logic and data
-- **Better readability:** See input pattern and expected IR together
+**IR Normalization:** `normalizeIR()` ensures consistent `optional` property (defaults to `false`) and property order, eliminating parser-specific IR variations.
 
 ### Development Workflow
 
