@@ -16,9 +16,11 @@ const unsupportedKeys = [
   "hash",
 ] satisfies (keyof URLPattern)[];
 
-export function fromURLPattern<T extends URLPattern | URLPatternInput>(pattern: T): RouteIR<T> {
+export function fromURLPattern<T extends URLPattern | URLPatternInput>(
+  pattern: T,
+): RouteIR<T> {
   let obj: URLPattern | URLPatternInit;
-  if (typeof pattern === 'string') {
+  if (typeof pattern === "string") {
     const URLPatternConstructor = getConstructor();
     obj = new URLPatternConstructor(pattern);
   } else {
@@ -36,7 +38,7 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(pattern: 
   return {
     pattern,
     // The syntax for patterns is based on the path-to-regexp JavaScript library.
-    params: fromPathToRegexpV8(obj.pathname ?? '*').params,
+    params: fromPathToRegexpV8(obj.pathname ?? "*").params,
   };
 }
 
