@@ -213,46 +213,40 @@ See "Test Fixture Architecture" section below for how URLPattern fixtures are or
 
 ### Test Fixture Architecture
 
-The test suite uses a **two-section fixture architecture** for clear, maintainable testing:
+The test suite uses a **two-section fixture architecture** with all fixtures consolidated inline in a single test file for clarity and maintainability.
 
-**Section 1: Pattern → IR (Input Fixtures)**
+**Section 1: Pattern → IR (Input Tests)**
 Tests that parsing patterns from each format produces correct normalized IRs:
 
 ```typescript
-// tests/fixtures.ts - inputFixtures array
-{
-  pattern: "/foo/:id",
-  format: "rou3",
-  ir: {
-    params: [
-      { value: "foo", optional: false },
-      { value: ":id", optional: false, catchAll: { name: "id", greedy: false } }
-    ]
-  }
-}
+// tests/index.test.ts - Pattern → IR tests (inline)
+test("rou3: /foo/:id → named parameter", () => {
+  const result = fromRou3("/foo/:id");
+  expect(normalizeIR(result.params)).toEqual([
+    { value: "foo", optional: false },
+    { value: ":id", optional: false, catchAll: { name: "id", greedy: false } }
+  ]);
+});
 ```
 
-**Section 2: IR → Pattern (Output Fixtures)**
+**Section 2: IR → Pattern (Output Tests)**
 Tests that IRs generate correct patterns for each format (one-to-many mapping):
 
 ```typescript
-// tests/fixtures.ts - outputFixtures array
-{
-  ir: {
+// tests/index.test.ts - IR → Pattern tests (inline)
+test("optional single segment → rou3:/foo/*, ptr8:/foo{/:_1}", () => {
+  const ir: RouteIR = {
+    pattern: "",
     params: [
       { value: "foo", optional: false },
       { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } }
     ]
-  },
-  outputs: {
-    rou3: "/foo/*",
-    "path-to-regexp-v8": "/foo{/:_1}",
-    "path-to-regexp-v6": "/foo/:_1?",
-    regexp: [/^\/foo\/?([^/]*)\/?$/, /^\/foo\/?(?<_1>[^/]*)\/?$/],
-    urlpattern: "/foo/:_1?{/}?",
-    urlpatterninit: { pathname: "/foo/:_1?{/}?" }
-  }
-}
+  };
+  
+  expect(toRou3(ir)).toContain("/foo/*");
+  expect(toPathToRegexpV8(ir)).toBe("/foo{/:_1}");
+  expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
+});
 ```
 
 **IR Normalization:**
@@ -264,17 +258,18 @@ The `normalizeIR()` function ensures consistent IR representation:
 This eliminates ambiguity where different parsers produce structurally different but semantically identical IRs.
 
 **Test Organization:**
-- `tests/fixtures.ts` - Fixture data and types
-- `tests/index.test.ts` - Test suites (legacy + two-section)
-  - Legacy tests: ~1013 tests covering round-trip conversions
-  - Pattern → IR tests: ~23 tests validating parsing
-  - IR → Pattern tests: ~60 tests validating generation (10 IRs × 6 formats)
+- Single file: `tests/index.test.ts` (~450 lines, all tests and fixtures consolidated)
+- Pattern → IR tests: 23 tests validating parsing
+- IR → Pattern tests: 10 tests validating generation (60+ format-specific assertions)
+- No separate fixture file - all data inline for clarity
 
 **Benefits:**
-- **Explicit expectations:** Each fixture declares the exact expected IR
-- **Clear failure diagnosis:** Know immediately if parsing or generation fails
-- **Easy extension:** Add new patterns by adding to input/output fixtures
-- **Separation of concerns:** Parsing and generation tested independently
+- **No indirection:** Fixtures defined where they're used
+- **Explicit expectations:** Each test declares the exact expected IR inline
+- **Clear failure diagnosis:** Test name and inline data show exactly what failed
+- **Easy extension:** Add new tests by copying and modifying inline data
+- **Single source:** One file contains all test logic and data
+- **Better readability:** See input pattern and expected IR together
 
 ### Development Workflow
 
