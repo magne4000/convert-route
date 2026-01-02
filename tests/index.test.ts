@@ -1,8 +1,5 @@
 import "urlpattern-polyfill";
-import nextRouteMatcher from "next-route-matcher";
-import { match as matchPtrv6 } from "path-to-regexpv6";
-import { match as matchPtrv8 } from "path-to-regexpv8";
-import { addRoute, createRouter, findRoute } from "rou3";
+import type { RouteParam, RouteIR } from "../src/types.js";
 import { describe, expect, test } from "vitest";
 import { fromNextFs } from "../src/adapters/next-fs.js";
 import {
@@ -16,266 +13,448 @@ import {
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import {
   fromURLPattern,
+  toURLPattern,
   toURLPatternInput,
 } from "../src/adapters/urlpattern.js";
-import type { RouteIR } from "../src/types.js";
-import {
-  type FixtureAdapters,
-  type Route,
-  routes,
-  shouldMatch,
-  shouldNotMatch,
-} from "./fixtures.js";
 import { toRegexp } from "../src/adapters/regexp.js";
 
-function from(name: string) {
-  switch (name) {
-    case "rou3":
-      return fromRou3;
-    case "next-fs":
-      return fromNextFs;
-    case "path-to-regexp-v6":
-      return fromPathToRegexpV6;
-    case "path-to-regexp-v8":
-      return fromPathToRegexpV8;
-    case "urlpattern":
-    case "urlpatterninit":
-      return fromURLPattern;
-    case "regexp":
-      return null;
-    default:
-      throw new Error(`Unknown adapter: ${name}`);
-  }
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+// Normalize IR params to ensure consistent optional property and property order
+function normalizeIR(params: RouteParam[]): RouteParam[] {
+  return params.map((param) => {
+    // Build normalized object with consistent property order
+    const normalized: RouteParam = {
+      value: param.value,
+      optional: param.optional ?? false, // Always include, default to false
+    };
+
+    // Add catchAll if present, with consistent internal order
+    if (param.catchAll) {
+      normalized.catchAll = {
+        name: param.catchAll.name,
+        greedy: param.catchAll.greedy,
+      };
+    }
+
+    return normalized;
+  });
 }
 
-function to(
-  name: keyof FixtureAdapters,
-): null | ((route: RouteIR) => RegExp | string[] | URLPatternInit[]) {
-  switch (name) {
-    case "rou3":
-      return toRou3;
-    case "next-fs":
-      return null;
-    case "path-to-regexp-v6":
-      return (route) => [toPathToRegexpV6(route)];
-    case "path-to-regexp-v8":
-      return (route) => [toPathToRegexpV8(route)];
-    case "urlpattern":
-      return (route) => {
-        const input = toURLPatternInput(route);
-        return [input.pathname];
-      };
-    case "urlpatterninit":
-      return (route) => [toURLPatternInput(route)];
-    case "regexp":
-      return toRegexp;
-    default:
-      throw new Error(`Unknown adapter: ${name}`);
-  }
-}
+// ============================================================================
+// PATTERN → IR TESTS (Input Fixtures)
+// ============================================================================
 
-function match(
-  name: keyof FixtureAdapters,
-  routes: string[] | RegExp[],
-): (path: string) => boolean {
-  switch (name) {
-    case "rou3": {
-      const router = createRouter();
-      routes.forEach((route) => {
-        addRoute(router, "GET", route as string, { payload: route });
-      });
-      return (path) => Boolean(findRoute(router, "GET", path));
-    }
-    case "next-fs": {
-      const fn = nextRouteMatcher(routes as string[]);
-      return (path) => Boolean(fn(path));
-    }
-    case "path-to-regexp-v6": {
-      const fns = routes.map((route) => matchPtrv6(route as string));
-      return (path) => {
-        return fns.map((fn) => fn(path)).some(Boolean);
-      };
-    }
-    case "path-to-regexp-v8": {
-      const fns = routes.map((route) => matchPtrv8(route as string));
-      return (path) => {
-        return fns.map((fn) => fn(path)).some(Boolean);
-      };
-    }
-    case "regexp": {
-      const fns = routes.map((route) => (route as RegExp).exec.bind(route));
-      return (path) => {
-        return fns.map((fn) => fn(path)).some(Boolean);
-      };
-    }
-    case "urlpattern":
-    case "urlpatterninit": {
-      const fns = routes.map((route) => {
-        const pattern =
-          route instanceof URLPattern ? route : new URLPattern(route as any);
-        return (path: string) =>
-          pattern.test({ pathname: path, baseURL: "http://localhost" });
-      });
-      return (path) => {
-        return fns.map((fn) => fn(path)).some(Boolean);
-      };
-    }
+describe("Pattern → IR (Parsing Tests)", () => {
+  test("rou3: / → empty params", () => {
+    const result = fromRou3("/");
+    expect(normalizeIR(result.params)).toEqual([]);
+  });
 
-    default:
-      throw new Error(`Unknown adapter: ${name}`);
-  }
-}
+  test("path-to-regexp-v8: / → empty params", () => {
+    const result = fromPathToRegexpV8("/");
+    expect(normalizeIR(result.params)).toEqual([]);
+  });
 
-describe.for(routes)("%s", (fixture) => {
-  const entries = Object.entries(fixture) as [keyof FixtureAdapters, Route][];
+  test("rou3: /foo → single static segment", () => {
+    const result = fromRou3("/foo");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+    ]);
+  });
 
-  describe.for(entries)("$0", ([name1, route1]) => {
-    const fromName1 = from(name1);
-    if (fromName1) {
-      const ir1 = route1.in.map((x) => fromName1(x as string));
+  test("path-to-regexp-v8: /foo → single static segment", () => {
+    const result = fromPathToRegexpV8("/foo");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+    ]);
+  });
 
-      test.for(entries)("$0", ([name2, route2], context) => {
-        const toName2 = to(name2);
-        if (toName2 === null) {
-          context.skip();
-          return;
-        }
+  test("rou3: /foo/bar → two static segments", () => {
+    const result = fromRou3("/foo/bar");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      { value: "bar", optional: false },
+    ]);
+  });
 
-        // route1 to route2
-        const oneOf = ir1.flatMap<string | RegExp>((x) => toName2(x));
-        expect(route2.out).toContainEqual(oneOf);
-      });
-    }
+  test("rou3: /foo/:id → named parameter", () => {
+    const result = fromRou3("/foo/:id");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":id",
+        optional: false,
+        catchAll: { name: "id", greedy: false },
+      },
+    ]);
+  });
 
-    test.for(
-      fixture[shouldMatch],
-    )(`${route1.in.join(",")} should match %s`, (path) => {
-      expect(match(name1, route1.in)(path)).toBe(true);
-    });
+  test("path-to-regexp-v8: /foo/:id → named parameter", () => {
+    const result = fromPathToRegexpV8("/foo/:id");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":id",
+        optional: false,
+        catchAll: { name: "id", greedy: false },
+      },
+    ]);
+  });
 
-    test.for(
-      fixture[shouldNotMatch],
-    )(`${route1.in.join(",")} should not match %s`, (path) => {
-      expect(match(name1, route1.in)(path)).toBe(false);
-    });
+  test("rou3: /foo/:foo/bar/:bar → multiple named parameters", () => {
+    const result = fromRou3("/foo/:foo/bar/:bar");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":foo",
+        optional: false,
+        catchAll: { name: "foo", greedy: false },
+      },
+      { value: "bar", optional: false },
+      {
+        value: ":bar",
+        optional: false,
+        catchAll: { name: "bar", greedy: false },
+      },
+    ]);
+  });
+
+  test("rou3: /foo/* → optional single segment wildcard", () => {
+    const result = fromRou3("/foo/*");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: false },
+      },
+    ]);
+  });
+
+  test("path-to-regexp-v8: /foo{/:_1} → optional single segment", () => {
+    const result = fromPathToRegexpV8("/foo{/:_1}");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: false },
+      },
+    ]);
+  });
+
+  test("rou3: /foo/**:_1 → required multi-segment (greedy)", () => {
+    const result = fromRou3("/foo/**:_1");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: false,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("path-to-regexp-v8: /foo/*_1 → required multi-segment (greedy)", () => {
+    const result = fromPathToRegexpV8("/foo/*_1");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: false,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("rou3: /foo/** → optional multi-segment wildcard", () => {
+    const result = fromRou3("/foo/**");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("path-to-regexp-v8: /foo{/*_1} → optional multi-segment", () => {
+    const result = fromPathToRegexpV8("/foo{/*_1}");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("urlpattern: /foo/:id{/}? → named parameter with trailing slash", () => {
+    const pattern = new URLPattern({ pathname: "/foo/:id{/}?" });
+    const result = fromURLPattern(pattern);
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":id",
+        optional: false,
+        catchAll: { name: "id", greedy: false },
+      },
+    ]);
+  });
+
+  test("urlpattern: /foo/:_1?{/}? → optional single segment", () => {
+    const pattern = new URLPattern({ pathname: "/foo{/:_1}?{/}?" });
+    const result = fromURLPattern(pattern);
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: false },
+      },
+    ]);
+  });
+
+  test("urlpattern: /foo/:_1+{/}? → required multi-segment", () => {
+    const pattern = new URLPattern({ pathname: "/foo/:_1+{/}?" });
+    const result = fromURLPattern(pattern);
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: false,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("urlpattern: /foo/:_1*{/}? → optional multi-segment", () => {
+    const pattern = new URLPattern({ pathname: "/foo/:_1*{/}?" });
+    const result = fromURLPattern(pattern);
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: true },
+      },
+    ]);
+  });
+
+  test("urlpatterninit: /foo/:id{/}? → named parameter", () => {
+    const result = fromURLPattern({ pathname: "/foo/:id{/}?" });
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":id",
+        optional: false,
+        catchAll: { name: "id", greedy: false },
+      },
+    ]);
+  });
+
+  test("path-to-regexp-v8: /foo{/:_1}/bar → optional segment in middle", () => {
+    const result = fromPathToRegexpV8("/foo{/:_1}/bar");
+    expect(normalizeIR(result.params)).toEqual([
+      { value: "foo", optional: false },
+      {
+        value: ":_1",
+        optional: true,
+        catchAll: { name: "_1", greedy: false },
+      },
+      { value: "bar", optional: false },
+    ]);
   });
 });
 
 // ============================================================================
-// NEW TWO-SECTION FIXTURE TESTS
+// IR → PATTERN TESTS (Generation Tests)
 // ============================================================================
 
-import {
-  inputFixtures,
-  outputFixtures,
-  normalizeIR,
-} from "./fixtures.js";
-
-describe("Two-Section Fixture Tests", () => {
-  describe("Pattern → IR (Input Fixtures)", () => {
-    test.for(inputFixtures)(
-      "parse $format pattern $pattern to correct IR",
-      ({ pattern, format, ir: expectedIr }) => {
-        const fromFn = from(format);
-        
-        if (!fromFn) {
-          // Formats without parsing (e.g., regexp) are not tested here
-          return;
-        }
-
-        // Convert pattern to appropriate type
-        let inputPattern: string | URLPattern | URLPatternInit;
-        if (format === "urlpattern" && typeof pattern === "string") {
-          inputPattern = new URLPattern({ pathname: pattern });
-        } else if (format === "urlpatterninit" && typeof pattern === "string") {
-          inputPattern = { pathname: pattern };
-        } else {
-          inputPattern = pattern as string;
-        }
-
-        // Parse the pattern
-        const result = fromFn(inputPattern as any);
-        
-        // Normalize the result IR for consistent comparison
-        const normalizedResult = {
-          pattern: result.pattern,
-          params: normalizeIR(result.params),
-        };
-
-        // Normalize expected IR
-        const normalizedExpected = {
-          pattern: normalizedResult.pattern, // Use the pattern from result
-          params: normalizeIR(expectedIr.params),
-        };
-
-        // Compare normalized params only (pattern can vary)
-        expect(normalizedResult.params).toEqual(normalizedExpected.params);
-      },
-    );
+describe("IR → Pattern (Generation Tests)", () => {
+  test("empty params → / for all formats", () => {
+    const ir: RouteIR = { pattern: "", params: [] };
+    
+    expect(toRou3(ir)).toContain("/");
+    expect(toPathToRegexpV6(ir)).toBe("/");
+    expect(toPathToRegexpV8(ir)).toBe("/");
+    expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
   });
 
-  describe("IR → Pattern (Output Fixtures)", () => {
-    test.for(outputFixtures)(
-      "convert IR to correct patterns for all formats",
-      ({ ir, outputs }) => {
-        // Test each output format
-        for (const [formatName, expectedOutput] of Object.entries(outputs)) {
-          if (expectedOutput === undefined) continue;
+  test("single static segment → /foo", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [{ value: "foo", optional: false }],
+    };
 
-          const toFn = to(formatName as keyof FixtureAdapters);
-          
-          if (!toFn) {
-            // Format doesn't support generation (e.g., next-fs)
-            continue;
-          }
+    expect(toRou3(ir)).toContain("/foo");
+    expect(toPathToRegexpV6(ir)).toBe("/foo");
+    expect(toPathToRegexpV8(ir)).toBe("/foo");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
+  });
 
-          // Create RouteIR from fixture
-          const route: RouteIR = {
-            pattern: "", // Will be set by toFn
-            params: ir.params,
-          };
+  test("two static segments → /foo/bar", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        { value: "bar", optional: false },
+      ],
+    };
 
-          // Generate output
-          const result = toFn(route);
+    expect(toRou3(ir)).toContain("/foo/bar");
+    expect(toPathToRegexpV6(ir)).toBe("/foo/bar");
+    expect(toPathToRegexpV8(ir)).toBe("/foo/bar");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/bar{/}?");
+  });
 
-          // Normalize expected output to array for comparison
-          const expectedArray = Array.isArray(expectedOutput)
-            ? expectedOutput
-            : [expectedOutput];
+  test("named parameter → /foo/:id", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":id",
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    };
 
-          // Compare based on format type
-          if (formatName === "regexp") {
-            // For regexp, compare as RegExp
-            const resultRegexps = Array.isArray(result) ? result : [result];
-            const expectedRegexps = expectedArray as RegExp[];
-            
-            // Check if result matches one of the expected patterns
-            const matches = resultRegexps.some((r) =>
-              expectedRegexps.some((e) => r.toString() === e.toString()),
-            );
-            expect(matches).toBe(true);
-          } else if (formatName === "urlpatterninit") {
-            // For urlpatterninit, compare pathname property
-            const resultInit = (Array.isArray(result) ? result[0] : result) as URLPatternInit;
-            const expectedInit = expectedArray[0] as URLPatternInit;
-            expect(resultInit.pathname).toBe(expectedInit.pathname);
-          } else {
-            // For string outputs (rou3, path-to-regexp, urlpattern)
-            const resultStrings = Array.isArray(result) ? result : [result];
-            
-            if (expectedArray.length === 1) {
-              // Single expected output
-              expect(resultStrings).toContain(expectedArray[0]);
-            } else {
-              // Multiple possible outputs - result should match one
-              const matches = resultStrings.some((r) =>
-                expectedArray.includes(r),
-              );
-              expect(matches).toBe(true);
-            }
-          }
-        }
-      },
-    );
+    expect(toRou3(ir)).toContain("/foo/:id");
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:id");
+    expect(toPathToRegexpV8(ir)).toBe("/foo/:id");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:id{/}?");
+  });
+
+  test("optional single segment → rou3:/foo/*, ptr8:/foo{/:_1}, urlpattern:/foo/:_1?", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":_1",
+          optional: true,
+          catchAll: { name: "_1", greedy: false },
+        },
+      ],
+    };
+
+    const rou3Result = toRou3(ir);
+    expect(rou3Result).toContain("/foo/*");
+
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:_1?");
+    expect(toPathToRegexpV8(ir)).toBe("/foo{/:_1}");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
+  });
+
+  test("required greedy → rou3:/foo/**:_1, ptr8:/foo/*_1, urlpattern:/foo/:_1+", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":_1",
+          optional: false,
+          catchAll: { name: "_1", greedy: true },
+        },
+      ],
+    };
+
+    const rou3Result = toRou3(ir);
+    expect(rou3Result).toContain("/foo/**:_1");
+
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:_1+");
+    expect(toPathToRegexpV8(ir)).toBe("/foo/*_1");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1+{/}?");
+  });
+
+  test("optional greedy → rou3:/foo/**, ptr8:/foo{/*_1}, urlpattern:/foo/:_1*", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":_1",
+          optional: true,
+          catchAll: { name: "_1", greedy: true },
+        },
+      ],
+    };
+
+    const rou3Result = toRou3(ir);
+    expect(rou3Result).toContain("/foo/**");
+
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:_1*");
+    expect(toPathToRegexpV8(ir)).toBe("/foo{/*_1}");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1*{/}?");
+  });
+
+  test("optional segment in middle → /foo{/:_1}/bar", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":_1",
+          optional: true,
+          catchAll: { name: "_1", greedy: false },
+        },
+        { value: "bar", optional: false },
+      ],
+    };
+
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:_1?/bar");
+    expect(toPathToRegexpV8(ir)).toBe("/foo{/:_1}/bar");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?/bar{/}?");
+  });
+
+  test("multiple named params → /foo/:foo/bar/:bar", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":foo",
+          optional: false,
+          catchAll: { name: "foo", greedy: false },
+        },
+        { value: "bar", optional: false },
+        {
+          value: ":bar",
+          optional: false,
+          catchAll: { name: "bar", greedy: false },
+        },
+      ],
+    };
+
+    expect(toRou3(ir)).toContain("/foo/:foo/bar/:bar");
+    expect(toPathToRegexpV6(ir)).toBe("/foo/:foo/bar/:bar");
+    expect(toPathToRegexpV8(ir)).toBe("/foo/:foo/bar/:bar");
+    expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
+  });
+
+  test("regexp generation for named param", () => {
+    const ir: RouteIR = {
+      pattern: "",
+      params: [
+        { value: "foo", optional: false },
+        {
+          value: ":id",
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    };
+
+    const regexps = toRegexp(ir);
+    expect(regexps).toHaveLength(2);
+    expect(regexps[0].toString()).toBe("/^\\/foo\\/([^/]+)\\/?$/");
+    expect(regexps[1].toString()).toBe("/^\\/foo\\/(?<id>[^/]+)\\/?$/");
   });
 });
