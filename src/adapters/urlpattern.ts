@@ -73,7 +73,11 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
     throw new ConvertRouteError(`RegExp groups are not yet supported`);
   }
 
-  const pathname = obj.pathname ?? "*";
+  let pathname = obj.pathname ?? "*";
+  
+  // Strip optional trailing slash pattern {/}? before parsing
+  // This is added by toURLPatternInput for trailing slash support
+  pathname = pathname.replace(/\{\/\}\?$/, "");
 
   return {
     pattern,
@@ -81,14 +85,34 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   };
 }
 
-export function toURLPattern(route: RouteIR): URLPattern {
-  const URLPatternConstructor = getConstructor();
-  return new URLPatternConstructor(toURLPatternInput(route));
+export interface URLPatternOptions {
+  /**
+   * Whether to add optional trailing slash support to the pattern.
+   * When true (default), appends `{/}?` to make patterns match both with and without trailing slashes.
+   * @default true
+   */
+  trailingSlash?: boolean;
 }
 
-export function toURLPatternInput(route: RouteIR): { pathname: string } {
+export function toURLPattern(
+  route: RouteIR,
+  options?: URLPatternOptions,
+): URLPattern {
+  const URLPatternConstructor = getConstructor();
+  return new URLPatternConstructor(toURLPatternInput(route, options));
+}
+
+export function toURLPatternInput(
+  route: RouteIR,
+  options?: URLPatternOptions,
+): { pathname: string } {
+  const { trailingSlash = true } = options ?? {};
   let i = 0;
-  if (route.params.length === 0) return { pathname: "/" };
+  
+  // Handle empty route (root path)
+  if (route.params.length === 0) {
+    return { pathname: trailingSlash ? "/{/}?" : "/" };
+  }
   
   const pathname = route.params
     .map((r) => {
@@ -107,8 +131,12 @@ export function toURLPatternInput(route: RouteIR): { pathname: string } {
     })
     .join("");
 
+  const finalPathname = pathname === "" || pathname === "*" ? "/*" : pathname;
+  
+  // Add optional trailing slash support by default to match path-to-regexp v8 behavior
+  // Users can opt-out by passing { trailingSlash: false }
   return {
-    pathname: pathname === "" || pathname === "*" ? "/*" : pathname,
+    pathname: trailingSlash ? `${finalPathname}{/}?` : finalPathname,
   };
 }
 
