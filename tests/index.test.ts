@@ -50,7 +50,7 @@ function from(name: string) {
 
 function to(
   name: keyof FixtureAdapters,
-): null | ((route: RouteIR) => RegExp | string[]) {
+): null | ((route: RouteIR) => RegExp | string[] | URLPatternInit[]) {
   switch (name) {
     case "rou3":
       return toRou3;
