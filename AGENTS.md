@@ -58,9 +58,10 @@ The following commands work independently (no dependencies between them except f
    pnpm run test
    ```
    - Runs vitest test suite
-   - 643 total tests (611 active, 32 skipped)
+   - 1114 total tests (1046 active, 68 skipped/legacy failures)
    - Works directly on source files without requiring a build
    - Test files: `tests/index.test.ts` and `tests/fixtures.ts`
+   - Includes two-section fixture tests (33 tests) for clear validation
 
 ### CI Validation
 
@@ -110,7 +111,7 @@ Each adapter provides `from*` and/or `to*` functions:
 - `path-to-regexp-v8.ts` - Convert from/to path-to-regexp v8 format
 - `next-fs.ts` - Convert from Next.js file system routes (no toNextFs)
 - `regexp.ts` - Convert to RegExp (no fromRegexp)
-- `urlpattern.ts` - Convert from/to URLPattern and URLPatternInit formats
+- `urlpattern.ts` - Convert from/to URLPattern and URLPatternInit formats with dedicated SegmentMapper
 
 **Utilities** (`src/utils/`):
 - `mapper.ts` - SegmentMapper for parsing route segments
@@ -118,8 +119,14 @@ Each adapter provides `from*` and/or `to*` functions:
 - `error.ts` - Error handling utilities
 
 ### Test Structure (`tests/`)
-- `index.test.ts` - Main test suite with 643 tests covering all adapters
-- `fixtures.ts` - Test fixtures and helper functions
+- `index.test.ts` - Main test suite with 1114 tests covering all adapters
+  - Legacy round-trip conversion tests (~1013 tests)
+  - Two-section fixture tests (~33 tests for Pattern→IR and IR→Pattern)
+- `fixtures.ts` - Test fixtures, helper functions, and two-section fixture arrays
+  - `inputFixtures[]` - Pattern → IR validation (23 fixtures)
+  - `outputFixtures[]` - IR → Pattern validation (10 fixtures)
+  - `normalizeIR()` - IR normalization helper for consistent comparisons
+  - Legacy `routes[]` - Original fixture format (being phased out)
 
 ### Distribution
 
@@ -152,24 +159,122 @@ Build outputs to `dist/` with:
 
 ### URLPattern Support
 
-The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format.
+The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format, with automatic trailing slash handling.
+
+**Architecture:**
+- **Dedicated SegmentMapper:** Custom implementation for URLPattern syntax (not based on path-to-regexp)
+- **Direct parsing:** Handles `:param`, `:param?`, `:param+`, `:param*` modifiers natively
+- **Trailing slash support:** Automatic `{/}?` suffix by default (opt-out available)
 
 **Key Conversions:**
 - path-to-regexp v8 `/*param` ↔ URLPattern `/:param+` (required multi-segment)
 - path-to-regexp v8 `{/*param}` ↔ URLPattern `/:param*` (optional multi-segment)
 - path-to-regexp v8 `{/:param}` ↔ URLPattern `/:param?` (optional single segment)
 
-**Known Limitations:**
-1. **Trailing slashes:** URLPattern does not match trailing slashes by default, while path-to-regexp v8 does. For example:
-   - path-to-regexp v8 `/foo{/:id}` matches both `/foo/bar` and `/foo/bar/`
-   - URLPattern `/foo/:id?` matches `/foo/bar` but NOT `/foo/bar/`
-   
-2. **Unsupported properties:** Only the `pathname` property is supported. Other URLPattern properties (protocol, hostname, port, username, password, search, hash) will throw `ConvertRouteError` if not default values.
+**Trailing Slash Handling:**
+By default, the adapter appends `{/}?` to patterns to match both with and without trailing slashes, aligning with path-to-regexp v8 behavior:
 
-3. **RegExp groups:** Patterns with `hasRegExpGroups` are not supported.
+```typescript
+import { toURLPatternInput } from './adapters/urlpattern.js';
+
+// Default: trailing slash support enabled
+toURLPatternInput(route);
+// → { pathname: "/foo/:id{/}?" } (matches /foo/bar and /foo/bar/)
+
+// Opt-out: no trailing slash support
+toURLPatternInput(route, { trailingSlash: false });
+// → { pathname: "/foo/:id" } (matches only /foo/bar)
+```
+
+**URLPatternOptions Interface:**
+```typescript
+interface URLPatternOptions {
+  trailingSlash?: boolean; // default: true
+}
+```
+
+**Functions:**
+- `fromURLPattern(pattern: URLPattern | URLPatternInit): RouteIR` - Parse URLPattern to IR
+- `toURLPattern(route: RouteIR, options?: URLPatternOptions): URLPattern` - Convert IR to URLPattern
+- `toURLPatternInput(route: RouteIR, options?: URLPatternOptions): URLPatternInit` - Convert IR to URLPatternInit
+
+**Known Limitations:**
+1. **Pathname only:** Only the `pathname` property is supported. Other URLPattern properties (protocol, hostname, port, username, password, search, hash) will throw `ConvertRouteError` if not default values.
+
+2. **RegExp groups:** Patterns with `hasRegExpGroups` are not supported and will throw `ConvertRouteError`.
+
+3. **Trailing slash behavior:** When `trailingSlash: false`, URLPattern behaves per spec (strict matching without trailing slash), which differs from path-to-regexp v8's permissive matching.
 
 **Type Definitions:**
 The package includes a global type declaration for URLPattern in `src/urlpattern.d.ts` that extends the `urlpattern-polyfill` types.
+
+**Testing:**
+See "Test Fixture Architecture" section below for how URLPattern fixtures are organized.
+
+### Test Fixture Architecture
+
+The test suite uses a **two-section fixture architecture** for clear, maintainable testing:
+
+**Section 1: Pattern → IR (Input Fixtures)**
+Tests that parsing patterns from each format produces correct normalized IRs:
+
+```typescript
+// tests/fixtures.ts - inputFixtures array
+{
+  pattern: "/foo/:id",
+  format: "rou3",
+  ir: {
+    params: [
+      { value: "foo", optional: false },
+      { value: ":id", optional: false, catchAll: { name: "id", greedy: false } }
+    ]
+  }
+}
+```
+
+**Section 2: IR → Pattern (Output Fixtures)**
+Tests that IRs generate correct patterns for each format (one-to-many mapping):
+
+```typescript
+// tests/fixtures.ts - outputFixtures array
+{
+  ir: {
+    params: [
+      { value: "foo", optional: false },
+      { value: ":_1", optional: true, catchAll: { name: "_1", greedy: false } }
+    ]
+  },
+  outputs: {
+    rou3: "/foo/*",
+    "path-to-regexp-v8": "/foo{/:_1}",
+    "path-to-regexp-v6": "/foo/:_1?",
+    regexp: [/^\/foo\/?([^/]*)\/?$/, /^\/foo\/?(?<_1>[^/]*)\/?$/],
+    urlpattern: "/foo/:_1?{/}?",
+    urlpatterninit: { pathname: "/foo/:_1?{/}?" }
+  }
+}
+```
+
+**IR Normalization:**
+The `normalizeIR()` function ensures consistent IR representation:
+- `optional` property always present (defaults to `false`)
+- Consistent property order: `value`, `optional`, `catchAll`
+- CatchAll with consistent order: `name`, `greedy`
+
+This eliminates ambiguity where different parsers produce structurally different but semantically identical IRs.
+
+**Test Organization:**
+- `tests/fixtures.ts` - Fixture data and types
+- `tests/index.test.ts` - Test suites (legacy + two-section)
+  - Legacy tests: ~1013 tests covering round-trip conversions
+  - Pattern → IR tests: ~23 tests validating parsing
+  - IR → Pattern tests: ~60 tests validating generation (10 IRs × 6 formats)
+
+**Benefits:**
+- **Explicit expectations:** Each fixture declares the exact expected IR
+- **Clear failure diagnosis:** Know immediately if parsing or generation fails
+- **Easy extension:** Add new patterns by adding to input/output fixtures
+- **Separation of concerns:** Parsing and generation tested independently
 
 ### Development Workflow
 
