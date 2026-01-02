@@ -64,16 +64,16 @@ type TestedIRToPattern =
   | "/foo{/:_1}/bar"
   | "/foo/:foo/bar/:bar";
 
-// For Pattern → IR: require rou3 and path-to-regexp-v8 at minimum, others optional
+// For Pattern → IR: ALL formats required (no optional properties)
 type PatternToIRTests = {
   rou3: () => void;
   "path-to-regexp-v8": () => void;
-  urlpattern?: () => void;
-  urlpatterninit?: () => void;
-  nextfs?: () => void;
+  urlpattern: () => void;
+  urlpatterninit: () => void;
+  nextfs: () => void;
 };
 
-// For IR → Pattern: require all 6 formats
+// For IR → Pattern: ALL 6 formats required (no optional properties)
 type IRToPatternTests = {
   rou3: () => void;
   "path-to-regexp-v6": () => void;
@@ -88,9 +88,9 @@ function testPatternToIR(pattern: TestedPatternToIR, tests: PatternToIRTests): v
   describe(pattern, () => {
     test("rou3", tests.rou3);
     test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
-    if (tests.urlpattern) test("urlpattern", tests.urlpattern);
-    if (tests.urlpatterninit) test("urlpatterninit", tests.urlpatterninit);
-    if (tests.nextfs) test("nextfs", tests.nextfs);
+    test("urlpattern", tests.urlpattern);
+    test("urlpatterninit", tests.urlpatterninit);
+    test("nextfs", tests.nextfs);
   });
 }
 
