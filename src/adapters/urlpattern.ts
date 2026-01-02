@@ -1,6 +1,6 @@
 import type { RouteIR } from "../types.js";
 import { ConvertRouteError } from "../utils/error.js";
-import { fromPathToRegexpV8, toPathToRegexpV8 } from "./path-to-regexp-v8.js";
+import { SegmentMapper } from "../utils/mapper.js";
 
 function isDefault(s: string | undefined) {
   return !s || s === "*";
@@ -15,6 +15,43 @@ const unsupportedKeys = [
   "search",
   "hash",
 ] satisfies (keyof URLPattern)[];
+
+// URLPattern SegmentMapper
+// Handles URLPattern-specific syntax:
+// - :param   - required single segment
+// - :param?  - optional single segment
+// - :param+  - required multi-segment (one or more)
+// - :param*  - optional multi-segment (zero or more)
+const urlPatternMapper = new SegmentMapper()
+  .match(/^:(\w+)\+$/, (match) => ({
+    catchAll: {
+      name: match[1],
+      greedy: true,
+    },
+    optional: false,
+  }))
+  .match(/^:(\w+)\*$/, (match) => ({
+    catchAll: {
+      name: match[1],
+      greedy: true,
+    },
+    optional: true,
+  }))
+  .match(/^:(\w+)\?$/, (match) => ({
+    catchAll: {
+      name: match[1],
+      greedy: false,
+    },
+    optional: true,
+  }))
+  .match(/^:(\w+)$/, (match) => ({
+    catchAll: {
+      name: match[1],
+      greedy: false,
+    },
+    optional: false,
+  }))
+  .match(/^.*$/, () => ({}));
 
 export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   pattern: T,
@@ -38,20 +75,9 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
 
   const pathname = obj.pathname ?? "*";
 
-  // Convert URLPattern syntax to path-to-regexp-v8 syntax
-  // URLPattern → path-to-regexp-v8:
-  // /:param+  → /*param  (required multi-segment)
-  // /:param*  → {/*param} (optional multi-segment)
-  // /:param?  → {/:param} (optional single segment)
-  let v8Pathname = pathname
-    .replace(/:(\w+)\+/g, "/*$1") // :param+ → /*param
-    .replace(/:(\w+)\*/g, "{/*$1}") // :param* → {/*param}
-    .replace(/:(\w+)\?/g, "{/:$1}"); // :param? → {/:param}
-
-  const ir = fromPathToRegexpV8(v8Pathname);
   return {
     pattern,
-    params: ir.params,
+    params: urlPatternMapper.exec(pathname),
   };
 }
 
@@ -61,19 +87,28 @@ export function toURLPattern(route: RouteIR): URLPattern {
 }
 
 export function toURLPatternInput(route: RouteIR): { pathname: string } {
-  // Convert path-to-regexp-v8 syntax to URLPattern syntax
-  // path-to-regexp-v8 → URLPattern:
-  // /*param  → /:param+  (required multi-segment)
-  // {/*param} → /:param* (optional multi-segment) - must process before /*param
-  // {/:param} → /:param? (optional single segment)
-  const v8Pathname = toPathToRegexpV8(route);
-  const pathname = v8Pathname
-    .replace(/\{\/\*(\w+)\}/g, "/:$1*") // {/*param} → /:param* (MUST be before /*param)
-    .replace(/\{\/:(\w+)\}/g, "/:$1?") // {/:param} → /:param?
-    .replace(/\/\*(\w+)/g, "/:$1+"); // /*param → /:param+ (after grouped forms)
+  let i = 0;
+  if (route.params.length === 0) return { pathname: "/" };
+  
+  const pathname = route.params
+    .map((r) => {
+      if (r.catchAll?.greedy) {
+        const name = r.catchAll.name || `_${++i}`;
+        // Greedy catch-all: required (/:name+) or optional (/:name*)
+        return r.optional ? `/:${name}*` : `/:${name}+`;
+      }
+      if (r.catchAll && !r.catchAll.greedy) {
+        const name = r.catchAll.name || `_${++i}`;
+        // Non-greedy (single segment): required (/:name) or optional (/:name?)
+        return r.optional ? `/:${name}?` : `/:${name}`;
+      }
+      // Literal segment: never optional in URLPattern
+      return `/${r.value}`;
+    })
+    .join("");
 
   return {
-    pathname: pathname === "*" ? "/*" : pathname,
+    pathname: pathname === "" || pathname === "*" ? "/*" : pathname,
   };
 }
 
