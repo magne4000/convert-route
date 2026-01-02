@@ -35,10 +35,19 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   if ("hasRegExpGroups" in obj && obj.hasRegExpGroups) {
     throw new ConvertRouteError(`RegExp groups are not yet supported`);
   }
+
+  // console.log("fromURLPattern original obj:", obj);
+  const pathname = obj.pathname ?? "*";
+
+  // URLPattern syntax differs from path-to-regexp-v8 primarily in how optionality is handled.
+  // path-to-regexp-v8: {/:name}
+  // URLPattern: {/:name}?
+  const v8Pathname = pathname.replace(/(\{([^{}]+)\})\?/g, "$1");
+
+  const ir = fromPathToRegexpV8(v8Pathname);
   return {
     pattern,
-    // The syntax for patterns is based on the path-to-regexp JavaScript library.
-    params: fromPathToRegexpV8(obj.pathname ?? "*").params,
+    params: ir.params,
   };
 }
 
@@ -48,10 +57,10 @@ export function toURLPattern(route: RouteIR): URLPattern {
 }
 
 export function toURLPatternInput(route: RouteIR): { pathname: string } {
-  const pathname = toPathToRegexpV8(route);
+  const pathname = toPathToRegexpV8(route).replace(/\{[^{}]+\}/g, "$&?");
 
   return {
-    pathname,
+    pathname: pathname === "*" ? "/*" : pathname,
   };
 }
 

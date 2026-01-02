@@ -1,7 +1,10 @@
+import "urlpattern-polyfill";
 export const shouldMatch = Symbol.for("shouldMatch");
 export const shouldNotMatch = Symbol.for("shouldNotMatch");
 
-type FixtureInValue = string | Route | RegExp;
+type FixtureRouteValue = string | RegExp | URLPattern | URLPatternInit;
+type FixtureInValue = FixtureRouteValue | Route;
+
 
 export interface FixtureAdapters {
   rou3: FixtureInValue;
@@ -9,6 +12,8 @@ export interface FixtureAdapters {
   "path-to-regexp-v6": FixtureInValue;
   "path-to-regexp-v8": FixtureInValue;
   regexp: FixtureInValue;
+  urlpattern: FixtureInValue;
+  urlpatterninit: FixtureInValue;
 }
 
 interface WithSymbols {
@@ -17,8 +22,8 @@ interface WithSymbols {
 }
 
 export interface Route {
-  in: string[] | RegExp[];
-  out: string[][] | RegExp[][];
+  in: FixtureRouteValue[];
+  out: FixtureRouteValue[][];
 }
 
 type ResolvedFixture = {
@@ -34,6 +39,8 @@ export const routes = prepare([
     "path-to-regexp-v6": "/",
     "path-to-regexp-v8": "/",
     regexp: /^\/\/?$/,
+    urlpattern: new URLPattern({ pathname: "/" }),
+    urlpatterninit: { pathname: "/" },
     [shouldMatch]: ["/"],
     [shouldNotMatch]: ["/a", "/a/b"],
   },
@@ -43,6 +50,8 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo",
     "path-to-regexp-v8": "/foo",
     regexp: /^\/foo\/?$/,
+    urlpattern: new URLPattern({ pathname: "/foo" }),
+    urlpatterninit: { pathname: "/foo" },
     [shouldMatch]: ["/foo"],
     [shouldNotMatch]: ["/a", "/a/b", "/foo/a", "/foo/a/b"],
   },
@@ -52,6 +61,8 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/bar",
     "path-to-regexp-v8": "/foo/bar",
     regexp: /^\/foo\/bar\/?$/,
+    urlpattern: new URLPattern({ pathname: "/foo/bar" }),
+    urlpatterninit: { pathname: "/foo/bar" },
     [shouldMatch]: ["/foo/bar"],
     [shouldNotMatch]: [
       "/a",
@@ -68,6 +79,8 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/:id",
     "path-to-regexp-v8": "/foo/:id",
     regexp: /^\/foo\/(?<id>[^/]+)\/?$/,
+    urlpattern: new URLPattern({ pathname: "/foo/:id" }),
+    urlpatterninit: { pathname: "/foo/:id" },
     [shouldMatch]: ["/foo/a", "/foo/b"],
     [shouldNotMatch]: [
       "/a",
@@ -84,6 +97,8 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/:foo/bar/:bar",
     "path-to-regexp-v8": "/foo/:foo/bar/:bar",
     regexp: /^\/foo\/(?<foo>[^/]+)\/bar\/(?<bar>[^/]+)\/?$/,
+    urlpattern: new URLPattern({ pathname: "/foo/:foo/bar/:bar" }),
+    urlpatterninit: { pathname: "/foo/:foo/bar/:bar" },
     [shouldMatch]: ["/foo/a/bar/b"],
     [shouldNotMatch]: [
       "/a",
@@ -103,6 +118,14 @@ export const routes = prepare([
       in: [/^\/foo\/?([^/]*)\/?$/],
       out: [[/^\/foo\/?([^/]*)\/?$/], [/^\/foo\/?(?<_1>[^/]*)\/?$/]],
     },
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo{/:_1}?" })],
+      out: [["/foo{/:_1}?"], ["/foo/:_1?"]],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo{/:_1}?" }],
+      out: [[{ pathname: "/foo{/:_1}?" }], [{ pathname: "/foo/:_1?" }]],
+    },
     [shouldMatch]: ["/foo", "/foo/", "/foo/a"],
     [shouldNotMatch]: ["/a", "/a/b", "/foo/a/b", "/foo/a/b/c"],
   },
@@ -118,6 +141,8 @@ export const routes = prepare([
       in: [/^\/foo\/(.+)\/?$/],
       out: [[/^\/foo\/(.+)\/?$/], [/^\/foo\/(?<_1>.+)\/?$/]],
     },
+    urlpattern: new URLPattern({ pathname: "/foo/*_1" }),
+    urlpatterninit: { pathname: "/foo/*_1" },
     [shouldMatch]: ["/foo/a", "/foo/b", "/foo/a/b", "/foo/a/b/c"],
     [shouldNotMatch]: ["/a", "/a/b"],
   },
@@ -135,6 +160,14 @@ export const routes = prepare([
       in: [/^\/foo\/?(?<foo>[^/]*)\/?$/],
       out: [[/^\/foo\/?(?<foo>[^/]*)\/?$/], [/^\/foo\/?([^/]*)\/?$/]],
     },
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo{/:foo}?" })],
+      out: [["/foo{/:foo}?"], ["/foo{/:_1}?"]],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo{/:foo}?" }],
+      out: [[{ pathname: "/foo{/:foo}?" }], [{ pathname: "/foo{/:_1}?" }]],
+    },
     [shouldMatch]: ["/foo", "/foo/", "/foo/a"],
     [shouldNotMatch]: ["/a", "/a/b", "/foo/a/b", "/foo/a/b/c"],
   },
@@ -146,6 +179,14 @@ export const routes = prepare([
     regexp: {
       in: [/^\/foo\/?(?<_1>.*)\/?$/],
       out: [[/^\/foo\/?(?<_1>.*)\/?$/], [/^\/foo\/?(.*)\/?$/]],
+    },
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo{/*_1}?" })],
+      out: [["/foo{/*_1}?"], ["/foo/:_1*"]],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo{/*_1}?" }],
+      out: [[{ pathname: "/foo{/*_1}?" }], [{ pathname: "/foo/:_1*" }]],
     },
     [shouldMatch]: [
       "/foo",
@@ -164,6 +205,14 @@ export const routes = prepare([
     "path-to-regexp-v6": "/foo/:foo+",
     "path-to-regexp-v8": "/foo/*foo",
     regexp: /^\/foo\/(?<foo>.+)\/?$/,
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo/*foo" })],
+      out: [["/foo/*foo"], ["/foo/:foo+"]],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo/*foo" }],
+      out: [[{ pathname: "/foo/*foo" }], [{ pathname: "/foo/:foo+" }]],
+    },
     [shouldMatch]: [
       "/foo/a",
       "/foo/a/",
@@ -195,6 +244,14 @@ export const routes = prepare([
         [/^\/foo\/?(?<_1>[^/]*)\/bar\/?$/],
         [/^\/foo\/bar\/?$/, /^\/foo\/([^/]+)\/bar\/?$/],
       ],
+    },
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo{/:_1}?/bar" })],
+      out: [["/foo{/:_1}?/bar"], ["/foo/bar", "/foo/:_1/bar"]],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo{/:_1}?/bar" }],
+      out: [[{ pathname: "/foo{/:_1}?/bar" }], ["/foo/bar", "/foo/:_1/bar"]],
     },
     [shouldMatch]: ["/foo/bar", "/foo/bar/", "/foo/a/bar", "/foo/a/bar/"],
     [shouldNotMatch]: [
@@ -238,6 +295,20 @@ export const routes = prepare([
         ],
       ],
     },
+    urlpattern: {
+      in: [new URLPattern({ pathname: "/foo{/:_1}?/bar/*rest" })],
+      out: [
+        ["/foo{/:_1}?/bar/*rest"],
+        ["/foo/bar/*rest", "/foo/:_1/bar/*rest"],
+      ],
+    },
+    urlpatterninit: {
+      in: [{ pathname: "/foo{/:_1}?/bar/*rest" }],
+      out: [
+        [{ pathname: "/foo{/:_1}?/bar/*rest" }],
+        ["/foo/bar/*rest", "/foo/:_1/bar/*rest"],
+      ],
+    },
     [shouldMatch]: [
       "/foo/bar/a",
       "/foo/bar/a/b/c",
@@ -271,12 +342,27 @@ function prepare(
             out: [[value]],
           };
         } else if (value instanceof RegExp) {
-          route = route = {
+          route = {
             in: [value],
             out: [[value]],
           };
+        } else if (value instanceof URLPattern) {
+          route = {
+            in: [value],
+            out: [[value.pathname]],
+          };
+        } else if (
+          typeof value === "object" &&
+          value !== null &&
+          "pathname" in value &&
+          !("in" in value)
+        ) {
+          route = {
+            in: [value as any],
+            out: [[value as any]],
+          };
         } else {
-          route = value;
+          route = value as Route;
         }
 
         return [key, route] as const;

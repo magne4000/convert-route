@@ -1,3 +1,4 @@
+import "urlpattern-polyfill";
 import nextRouteMatcher from "next-route-matcher";
 import { match as matchPtrv6 } from "path-to-regexpv6";
 import { match as matchPtrv8 } from "path-to-regexpv8";
@@ -13,6 +14,11 @@ import {
   toPathToRegexpV8,
 } from "../src/adapters/path-to-regexp-v8.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
+import {
+  fromURLPattern,
+  toURLPattern,
+  toURLPatternInput,
+} from "../src/adapters/urlpattern.js";
 import type { RouteIR } from "../src/types.js";
 import {
   type FixtureAdapters,
@@ -33,6 +39,9 @@ function from(name: string) {
       return fromPathToRegexpV6;
     case "path-to-regexp-v8":
       return fromPathToRegexpV8;
+    case "urlpattern":
+    case "urlpatterninit":
+      return fromURLPattern;
     case "regexp":
       return null;
     default:
@@ -52,6 +61,13 @@ function to(
       return (route) => [toPathToRegexpV6(route)];
     case "path-to-regexp-v8":
       return (route) => [toPathToRegexpV8(route)];
+    case "urlpattern":
+      return (route) => {
+        const input = toURLPatternInput(route);
+        return [input.pathname];
+      };
+    case "urlpatterninit":
+      return (route) => [toURLPatternInput(route)];
     case "regexp":
       return toRegexp;
     default:
@@ -89,6 +105,18 @@ function match(
     }
     case "regexp": {
       const fns = routes.map((route) => (route as RegExp).exec.bind(route));
+      return (path) => {
+        return fns.map((fn) => fn(path)).some(Boolean);
+      };
+    }
+    case "urlpattern":
+    case "urlpatterninit": {
+      const fns = routes.map((route) => {
+        const pattern =
+          route instanceof URLPattern ? route : new URLPattern(route as any);
+        return (path: string) =>
+          pattern.test({ pathname: path, baseURL: "http://localhost" });
+      });
       return (path) => {
         return fns.map((fn) => fn(path)).some(Boolean);
       };

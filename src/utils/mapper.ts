@@ -38,6 +38,9 @@ export class SegmentMapper {
       // sliced == ['/']
       return [];
     }
+    if (sliced.length % 2 !== 0) {
+      sliced.push("");
+    }
     return Array.from(iterateWithSeparator(sliced)).map(
       ([separator, segment], index, array) => {
         for (const [pattern, getParam] of this.mapping) {
