@@ -7,7 +7,7 @@ export type RouteParam = {
   };
 };
 
-export type RouteIR = {
-  pattern: string; // Original pattern as provided
+export interface RouteIR<P = string> {
+  pattern: P; // Original pattern as provided
   params: RouteParam[]; // Named parameters
-};
+}

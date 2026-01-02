@@ -32,6 +32,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      urlpattern-polyfill:
+        specifier: ^10.1.0
+        version: 10.1.0
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(jiti@2.4.2)
@@ -1173,6 +1176,9 @@ packages:
       synckit:
         optional: true
 
+  urlpattern-polyfill@10.1.0:
+    resolution: {integrity: sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw==}
+
   vite-node@3.2.4:
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -2274,6 +2280,8 @@ snapshots:
     dependencies:
       '@oxc-project/runtime': 0.96.0
       rolldown: 1.0.0-beta.51
+
+  urlpattern-polyfill@10.1.0: {}
 
   vite-node@3.2.4(jiti@2.4.2):
     dependencies:
