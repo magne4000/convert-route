@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-**convert-route** is a TypeScript library that converts between different route pattern formats including `path-to-regexp` (v6 and v8), `rou3`, Next.js file system routes, and RegExp. The repository is small (~380 lines of TypeScript source code) and follows modern JavaScript/TypeScript practices.
+**convert-route** is a TypeScript library that converts between different route pattern formats including `path-to-regexp` (v6 and v8), `rou3`, Next.js file system routes, URLPattern, and RegExp. The repository is small (~450 lines of TypeScript source code) and follows modern JavaScript/TypeScript practices.
 
 **Key Technologies:**
 - **Language:** TypeScript 5.9.3 targeting ES2022
@@ -110,6 +110,7 @@ Each adapter provides `from*` and/or `to*` functions:
 - `path-to-regexp-v8.ts` - Convert from/to path-to-regexp v8 format
 - `next-fs.ts` - Convert from Next.js file system routes (no toNextFs)
 - `regexp.ts` - Convert to RegExp (no fromRegexp)
+- `urlpattern.ts` - Convert from/to URLPattern and URLPatternInit formats
 
 **Utilities** (`src/utils/`):
 - `mapper.ts` - SegmentMapper for parsing route segments
@@ -148,6 +149,27 @@ Build outputs to `dist/` with:
 2. **Wrong package manager:** Must use `pnpm`, not `npm` or `yarn`
 3. **Build not required for tests:** Don't assume tests need build output
 4. **Import extensions:** Biome will fail if .js extensions are missing on imports
+
+### URLPattern Support
+
+The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format.
+
+**Key Conversions:**
+- path-to-regexp v8 `/*param` ↔ URLPattern `/:param+` (required multi-segment)
+- path-to-regexp v8 `{/*param}` ↔ URLPattern `/:param*` (optional multi-segment)
+- path-to-regexp v8 `{/:param}` ↔ URLPattern `/:param?` (optional single segment)
+
+**Known Limitations:**
+1. **Trailing slashes:** URLPattern does not match trailing slashes by default, while path-to-regexp v8 does. For example:
+   - path-to-regexp v8 `/foo{/:id}` matches both `/foo/bar` and `/foo/bar/`
+   - URLPattern `/foo/:id?` matches `/foo/bar` but NOT `/foo/bar/`
+   
+2. **Unsupported properties:** Only the `pathname` property is supported. Other URLPattern properties (protocol, hostname, port, username, password, search, hash) will throw `ConvertRouteError` if not default values.
+
+3. **RegExp groups:** Patterns with `hasRegExpGroups` are not supported.
+
+**Type Definitions:**
+The package includes a global type declaration for URLPattern in `src/urlpattern.d.ts` that extends the `urlpattern-polyfill` types.
 
 ### Development Workflow
 

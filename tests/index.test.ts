@@ -16,7 +16,6 @@ import {
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import {
   fromURLPattern,
-  toURLPattern,
   toURLPatternInput,
 } from "../src/adapters/urlpattern.js";
 import type { RouteIR } from "../src/types.js";

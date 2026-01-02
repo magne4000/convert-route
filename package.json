@@ -1,7 +1,7 @@
 {
   "name": "convert-route",
   "version": "0.1.2",
-  "description": "Convert between rou3, Next.js, path-to-regexp and RegExp route patterns",
+  "description": "Convert between rou3, Next.js, path-to-regexp, URLPattern and RegExp route patterns",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsdown -c tsdown.config.ts",
@@ -15,6 +15,7 @@
     "rou3",
     "path-to-regexp",
     "next-fs",
+    "urlpattern",
     "regexp"
   ],
   "author": "Joël Charles <joel.charles91@gmail.com>",
@@ -42,7 +43,8 @@
     "./path-to-regexp-v6": "./dist/path-to-regexp-v6.js",
     "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
     "./next-fs": "./dist/next-fs.js",
-    "./regexp": "./dist/regexp.js"
+    "./regexp": "./dist/regexp.js",
+    "./urlpattern": "./dist/urlpattern.js"
   },
   "packageManager": "pnpm@10.11.0"
 }
