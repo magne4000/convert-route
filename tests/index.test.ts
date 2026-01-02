@@ -40,30 +40,6 @@ type PatternToIRFormat = "rou3" | "path-to-regexp-v8" | "urlpattern" | "urlpatte
 // Define all possible formats for IR → Pattern  
 type IRToPatternFormat = "rou3" | "path-to-regexp-v6" | "path-to-regexp-v8" | "regexp" | "urlpattern" | "urlpatterninit";
 
-// Track which patterns have been tested for Pattern → IR
-type TestedPatternToIR = 
-  | "/" 
-  | "/foo"
-  | "/foo/bar"
-  | "/foo/:id"
-  | "/foo/:foo/bar/:bar"
-  | "/foo/*"
-  | "/foo/**:_1"
-  | "/foo/**"
-  | "/foo{/:_1}/bar";
-
-// Track which patterns have been tested for IR → Pattern
-type TestedIRToPattern = 
-  | "/"
-  | "/foo" 
-  | "/foo/bar"
-  | "/foo/:id"
-  | "/foo/*"
-  | "/foo/**:_1"
-  | "/foo/**"
-  | "/foo{/:_1}/bar"
-  | "/foo/:foo/bar/:bar";
-
 // For Pattern → IR: ALL formats required (no optional properties)
 type PatternToIRTests = {
   rou3: () => void;
@@ -84,7 +60,7 @@ type IRToPatternTests = {
 };
 
 // Helper to test Pattern → IR with compile-time verification
-function testPatternToIR(pattern: TestedPatternToIR, tests: PatternToIRTests): void {
+function testPatternToIR(pattern: string, tests: PatternToIRTests): void {
   describe(pattern, () => {
     test("rou3", tests.rou3);
     test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
@@ -95,7 +71,7 @@ function testPatternToIR(pattern: TestedPatternToIR, tests: PatternToIRTests): v
 }
 
 // Helper to test IR → Pattern with compile-time verification
-function testIRToPattern(pattern: TestedIRToPattern, ir: RouteIR, tests: IRToPatternTests): void {
+function testIRToPattern(pattern: string, ir: RouteIR, tests: IRToPatternTests): void {
   describe(pattern, () => {
     test("generates correctly for all formats", () => {
       tests.rou3();
