@@ -113,7 +113,10 @@ function testIRToPattern(
 ): void {
   describe(pattern, () => {
     describe("rou3", () => {
-      test("pattern", () => tests["path-to-regexp-v6"](ir));
+      test("pattern", () => {
+        tests["path-to-regexp-v6"](ir);
+        expect.hasAssertions();
+      });
 
       const routes = toRou3(ir);
       const router = createRouter();
@@ -133,7 +136,10 @@ function testIRToPattern(
     });
 
     describe("path-to-regexp-v6", () => {
-      test("pattern", () => tests["path-to-regexp-v6"](ir));
+      test("pattern", () => {
+        tests["path-to-regexp-v6"](ir);
+        expect.hasAssertions();
+      });
 
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toPathToRegexpV6(ir);
@@ -147,7 +153,10 @@ function testIRToPattern(
     });
 
     describe("path-to-regexp-v8", () => {
-      test("pattern", () => tests["path-to-regexp-v8"](ir));
+      test("pattern", () => {
+        tests["path-to-regexp-v8"](ir);
+        expect.hasAssertions();
+      });
 
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toPathToRegexpV8(ir);
@@ -161,7 +170,10 @@ function testIRToPattern(
     });
 
     describe("regexp", () => {
-      test("pattern", () => tests.regexp(ir));
+      test("pattern", () => {
+        tests.regexp(ir);
+        expect.hasAssertions();
+      });
 
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toRegexp(ir);
@@ -175,7 +187,10 @@ function testIRToPattern(
     });
 
     describe("urlpattern", () => {
-      test("pattern", () => tests.urlpattern(ir));
+      test("pattern", () => {
+        tests.urlpattern(ir);
+        expect.hasAssertions();
+      });
 
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toURLPattern(ir);
@@ -189,7 +204,10 @@ function testIRToPattern(
     });
 
     describe("urlpatterninit", () => {
-      test("pattern", () => tests.urlpatterninit(ir));
+      test("pattern", () => {
+        tests.urlpatterninit(ir);
+        expect.hasAssertions();
+      });
 
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toURLPatternInput(ir);
