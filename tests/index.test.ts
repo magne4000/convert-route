@@ -368,7 +368,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
         );
       },
       nextfs: (_, context) => {
-        context.skip("[[slug]] is not support by Next.js");
+        context.skip("[[slug]] is not supported by Next.js");
       },
     },
   );
@@ -459,7 +459,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
         fromURLPattern(new URLPattern({ pathname: "/foo/:_1?/bar{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" }),
       nextfs: (_, context) => {
-        context.skip("[[slug]] is not support by Next.js");
+        context.skip("[[slug]] is not supported by Next.js");
       },
     },
   );
