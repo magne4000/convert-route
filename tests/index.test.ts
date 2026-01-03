@@ -265,7 +265,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpattern: () =>
         fromURLPattern(new URLPattern({ pathname: "/foo/:_1?/bar{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" }),
-      nextfs: () => fromNextFs("/foo/[[slug]]/bar"),
+      nextfs: () => fromNextFs("/foo/[[_1]]/bar"),
     },
   );
 });
