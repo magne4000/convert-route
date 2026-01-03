@@ -56,15 +56,14 @@ const mapper = new SegmentMapper()
 
 export function fromPathToRegexpV6(path: string): RouteIR {
   return {
-    pattern: path,
-    params: mapper.exec(path),
+    pathname: mapper.exec(path),
   };
 }
 
 export function toPathToRegexpV6(route: RouteIR): string {
   let i = 0;
   return join(
-    route.params.map((r) => {
+    route.pathname.map((r) => {
       if (r.catchAll?.greedy) {
         const name = r.catchAll.name || `_${++i}`;
         return r.optional ? `:${name}*` : `:${name}+`;

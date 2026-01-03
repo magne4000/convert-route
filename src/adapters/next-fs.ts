@@ -16,6 +16,13 @@ const mapper = new SegmentMapper()
       greedy: true,
     },
   }))
+  .match(/^\[\[([^\]]+)]]$/, (match) => ({
+    optional: true,
+    catchAll: {
+      name: match[1],
+      greedy: false,
+    },
+  }))
   .match(/^\[([^\]]+)]$/, (match) => ({
     catchAll: {
       name: match[1],
@@ -25,7 +32,6 @@ const mapper = new SegmentMapper()
 
 export function fromNextFs(path: string): RouteIR {
   return {
-    pattern: path,
-    params: mapper.exec(path),
+    pathname: mapper.exec(path),
   };
 }

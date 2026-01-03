@@ -55,7 +55,7 @@ const urlPatternMapper = new SegmentMapper()
 
 export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   pattern: T,
-): RouteIR<T> {
+): RouteIR {
   let obj: URLPattern | URLPatternInit;
   if (typeof pattern === "string") {
     const URLPatternConstructor = getConstructor();
@@ -80,8 +80,7 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   pathname = pathname.replace(/\{\/\}\?$/, "");
 
   return {
-    pattern,
-    params: urlPatternMapper.exec(pathname),
+    pathname: urlPatternMapper.exec(pathname),
   };
 }
 
@@ -110,11 +109,11 @@ export function toURLPatternInput(
   let i = 0;
   
   // Handle empty route (root path)
-  if (route.params.length === 0) {
+  if (route.pathname.length === 0) {
     return { pathname: trailingSlash ? "/{/}?" : "/" };
   }
   
-  const pathname = route.params
+  const pathname = route.pathname
     .map((r) => {
       if (r.catchAll?.greedy) {
         const name = r.catchAll.name || `_${++i}`;

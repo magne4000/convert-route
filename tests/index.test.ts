@@ -82,66 +82,66 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/", {
     rou3: () => {
       const result = fromRou3("/");
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/");
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/");
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/{/}?" });
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
     nextfs: () => {
       const result = fromNextFs("/");
-      expect(normalizeIR(result.params)).toEqual([]);
+      expect(normalizeIR(result.pathname)).toEqual([]);
     },
   });
 
   testPatternToIR("/foo", {
     rou3: () => {
       const result = fromRou3("/foo");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
     nextfs: () => {
       const result = fromNextFs("/foo");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
       ]);
     },
@@ -150,21 +150,21 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/bar", {
     rou3: () => {
       const result = fromRou3("/foo/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
@@ -172,21 +172,21 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/bar{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/bar{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
     },
     nextfs: () => {
       const result = fromNextFs("/foo/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ]);
@@ -196,10 +196,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/:id", {
     rou3: () => {
       const result = fromRou3("/foo/:id");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -207,10 +206,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:id");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -218,10 +216,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo/:id");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -230,10 +227,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:id{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -241,10 +237,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:id{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -252,10 +247,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[id]");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "[id]",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -266,16 +260,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/:foo/bar/:bar", {
     rou3: () => {
       const result = fromRou3("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -283,16 +275,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -300,16 +290,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -318,16 +306,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -335,16 +321,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -352,16 +336,14 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[foo]/bar/[bar]");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "[foo]",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: "[bar]",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -372,10 +354,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/*", {
     rou3: () => {
       const result = fromRou3("/foo/*");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "*",
           optional: true,
           catchAll: { greedy: false },
         },
@@ -383,10 +364,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:_1?");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -394,10 +374,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo{/:_1}");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -406,10 +385,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:_1?{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -417,10 +395,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:_1?{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -428,9 +405,12 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[[slug]]");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
-        { value: "[[slug]]", optional: false },
+        {
+          optional: true,
+          catchAll: { name: "slug", greedy: false },
+        },
       ]);
     },
   });
@@ -438,10 +418,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/**:_1", {
     rou3: () => {
       const result = fromRou3("/foo/**:_1");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "**:_1",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -449,10 +428,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:_1+");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1+",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -460,10 +438,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo/*_1");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "*_1",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -472,10 +449,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:_1+{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1+",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -483,10 +459,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:_1+{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1+",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -494,10 +469,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[...slug]");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "[...slug]",
           optional: false,
           catchAll: { name: "slug", greedy: true },
         },
@@ -508,10 +482,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo/**", {
     rou3: () => {
       const result = fromRou3("/foo/**");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "**",
           optional: true,
           catchAll: { greedy: true },
         },
@@ -519,10 +492,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:_1*");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1*",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -530,10 +502,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo{/*_1}");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "*_1",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -542,10 +513,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:_1*{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1*",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -553,10 +523,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:_1*{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1*",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -564,10 +533,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[[..._1]]");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "[[..._1]]",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -578,10 +546,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
   testPatternToIR("/foo{/:_1}/bar", {
     rou3: () => {
       const result = fromRou3("/foo/*/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: "*",
           optional: false,
           catchAll: { greedy: false },
         },
@@ -590,10 +557,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v6": () => {
       const result = fromPathToRegexpV6("/foo/:_1?/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -602,10 +568,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     "path-to-regexp-v8": () => {
       const result = fromPathToRegexpV8("/foo{/:_1}/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -615,10 +580,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     urlpattern: () => {
       const pattern = new URLPattern({ pathname: "/foo/:_1?/bar{/}?" });
       const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -627,10 +591,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     urlpatterninit: () => {
       const result = fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" });
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
         {
-          value: ":_1?",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -639,9 +602,12 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     nextfs: () => {
       const result = fromNextFs("/foo/[[slug]]/bar");
-      expect(normalizeIR(result.params)).toEqual([
+      expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
-        { value: "[[slug]]", optional: false },
+        {
+          optional: true,
+          catchAll: { name: "slug", greedy: false },
+        },
         { value: "bar", optional: false },
       ]);
     },
@@ -651,30 +617,30 @@ describe("Pattern → IR (Parsing Tests)", () => {
 describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/",
-    { pattern: "", params: [] },
+    { pathname: [] },
     {
       rou3: () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toRou3(ir)).toEqual(["/"]);
       },
       "path-to-regexp-v6": () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toPathToRegexpV6(ir)).toBe("/");
       },
       "path-to-regexp-v8": () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toPathToRegexpV8(ir)).toBe("/");
       },
       regexp: () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toRegexp(ir).source).toBe("^\\/\\/?$");
       },
       urlpattern: () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
       },
       urlpatterninit: () => {
-        const ir: RouteIR = { pattern: "", params: [] };
+        const ir: RouteIR = { pathname: [] };
         expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
       },
     }
@@ -683,49 +649,42 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo",
     {
-      pattern: "",
-      params: [{ value: "foo", optional: false }],
+      pathname: [{ value: "foo", optional: false }],
     },
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toRou3(ir)).toEqual(["/foo"]);
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toPathToRegexpV6(ir)).toBe("/foo");
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toPathToRegexpV8(ir)).toBe("/foo");
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toRegexp(ir).source).toBe("^\\/foo\\/?$");
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [{ value: "foo", optional: false }],
+          pathname: [{ value: "foo", optional: false }],
         };
         expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
       },
@@ -735,8 +694,7 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/bar",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         { value: "bar", optional: false },
       ],
@@ -744,8 +702,7 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -754,8 +711,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -764,8 +720,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -774,8 +729,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -784,8 +738,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -794,8 +747,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             { value: "bar", optional: false },
           ],
@@ -808,11 +760,9 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/:id",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
@@ -821,11 +771,9 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -835,11 +783,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -849,11 +795,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -863,11 +807,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -877,11 +819,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -891,11 +831,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":id",
               optional: false,
               catchAll: { name: "id", greedy: false },
             },
@@ -909,11 +847,9 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/*",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -922,11 +858,9 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -936,11 +870,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -950,11 +882,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -964,11 +894,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -978,11 +906,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -992,11 +918,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1010,11 +934,9 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/**:_1",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
@@ -1023,11 +945,9 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1037,11 +957,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1051,11 +969,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1065,11 +981,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1079,11 +993,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1093,11 +1005,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: false,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1111,11 +1021,9 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/**",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: true,
           catchAll: { name: "_1", greedy: true },
         },
@@ -1124,11 +1032,9 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1138,11 +1044,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1152,11 +1056,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1166,11 +1068,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1180,11 +1080,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1194,11 +1092,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: true },
             },
@@ -1212,11 +1108,9 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo{/:_1}/bar",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":_1",
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
@@ -1226,11 +1120,9 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1241,11 +1133,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1256,11 +1146,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1271,11 +1159,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1286,11 +1172,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1301,11 +1185,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":_1",
               optional: true,
               catchAll: { name: "_1", greedy: false },
             },
@@ -1320,17 +1202,14 @@ describe("IR → Pattern (Generation Tests)", () => {
   testIRToPattern(
     "/foo/:foo/bar/:bar",
     {
-      pattern: "",
-      params: [
+      pathname: [
         { value: "foo", optional: false },
         {
-          value: ":foo",
           optional: false,
           catchAll: { name: "foo", greedy: false },
         },
         { value: "bar", optional: false },
         {
-          value: ":bar",
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
@@ -1339,17 +1218,14 @@ describe("IR → Pattern (Generation Tests)", () => {
     {
       rou3: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1359,17 +1235,14 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v6": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1379,17 +1252,14 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       "path-to-regexp-v8": () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1399,17 +1269,14 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       regexp: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1419,17 +1286,14 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpattern: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1439,17 +1303,14 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: () => {
         const ir: RouteIR = {
-          pattern: "",
-          params: [
+          pathname: [
             { value: "foo", optional: false },
             {
-              value: ":foo",
               optional: false,
               catchAll: { name: "foo", greedy: false },
             },
             { value: "bar", optional: false },
             {
-              value: ":bar",
               optional: false,
               catchAll: { name: "bar", greedy: false },
             },
@@ -1478,14 +1339,12 @@ describe("Helper Functions", () => {
     test("normalizes catchAll structure", () => {
       const params: RouteParam[] = [
         {
-          value: ":id",
           catchAll: { name: "id", greedy: false },
         },
       ];
       const normalized = normalizeIR(params);
       expect(normalized).toEqual([
         {
-          value: ":id",
           optional: false,
           catchAll: { name: "id", greedy: false },
         },
