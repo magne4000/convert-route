@@ -12,6 +12,7 @@ Convert between `path-to-regexp`, `rou3`, `next.js`, `RegExp`, etc. route patter
   - [path-to-regexp v6](#path-to-regexp-v6)
   - [path-to-regexp v8](#path-to-regexp-v8)
   - [RegExp](#regexp)
+  - [URLPattern](#urlpattern)
 
 
 ## Installation
@@ -37,14 +38,14 @@ console.log(rou3Pattern); // ['/users/**:id']
 
 ## Supported Features
 
-| Feature              | Next.js        | rou3           | path-to-regexp v6 | path-to-regexp v8 | RegExp |
-|----------------------|----------------|----------------|-------------------|-------------------|--------|
-| Named Segments       | `[param]`      | `:param`       | `:param`          | `:param`          | Yes    |
-| Optional Segments    | No             | `*`, `*:param` | `:param?`         | `{/:param}`       | Yes    |
-| Catch-all (Wildcard) | `[...param]`   | `**:param`     | `:param+`         | `*param`          | Yes    |
-| Optional Catch-all   | `[[...param]]` | `**`           | `:param*`         | `{/*param}`       | Yes    |
-| Suffix Matching      | No             | WIP            | WIP               | WIP               | WIP    |
-| Prefix Matching      | No             | WIP            | WIP               | WIP               | WIP    |
+| Feature              | Next.js        | rou3           | path-to-regexp v6 | path-to-regexp v8 | URLPattern | RegExp |
+|----------------------|----------------|----------------|-------------------|-------------------|------------|--------|
+| Named Segments       | `[param]`      | `:param`       | `:param`          | `:param`          | `:param`   | Yes    |
+| Optional Segments    | No             | `*`, `*:param` | `:param?`         | `{/:param}`       | `:param?`  | Yes    |
+| Catch-all (Wildcard) | `[...param]`   | `**:param`     | `:param+`         | `*param`          | `:param+`  | Yes    |
+| Optional Catch-all   | `[[...param]]` | `**`           | `:param*`         | `{/*param}`       | `:param*`  | Yes    |
+| Suffix Matching      | No             | WIP            | WIP               | WIP               | WIP        | WIP    |
+| Prefix Matching      | No             | WIP            | WIP               | WIP               | WIP        | WIP    |
 
 ### rou3
 
@@ -95,4 +96,24 @@ import { fromPathToRegexpV8 } from 'convert-route/path-to-regexp-v8';
 const intermediateRepresentation = fromPathToRegexpV8('/users/:id');
 const regexp = toRegexp(intermediateRepresentation);
 console.log(regexp); // /^\/users\/(?<id>[^/]+)\/?$/
+```
+
+### URLPattern
+
+```ts
+import { fromURLPattern, toURLPattern, toURLPatternInput } from 'convert-route/urlpattern';
+import { fromPathToRegexpV8 } from 'convert-route/path-to-regexp-v8';
+
+const intermediateRepresentation = fromPathToRegexpV8('/users/:id');
+
+// Convert to URLPattern instance
+const pattern = toURLPattern(intermediateRepresentation);
+console.log(pattern.pathname); // '/users/:id{/}?'
+
+// Convert to URLPattern input object
+const input = toURLPatternInput(intermediateRepresentation);
+console.log(input); // { pathname: '/users/:id{/}?' }
+
+// Convert from URLPattern instance (or input object)
+const ir = fromURLPattern(pattern);
 ```

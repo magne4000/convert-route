@@ -6,7 +6,7 @@ export type GetRouteParam = (
   separator: string,
   index: number,
   array: unknown[],
-) => Omit<RouteParam, "value"> & { value?: string };
+) => Omit<RouteParam, "value">;
 
 function* iterateWithSeparator(segments: string[]) {
   for (let i = 0; i < segments.length; i += 2) {
@@ -43,14 +43,21 @@ export class SegmentMapper {
         for (const [pattern, getParam] of this.mapping) {
           // biome-ignore lint/suspicious/noAssignInExpressions: ignore
           if ((match = segment.match(pattern)) !== null) {
-            return {
-              value: segment,
-              ...getParam(match, segment, separator, index, array),
-            };
+            const param = getParam(match, segment, separator, index, array);
+            // Only set value for non-catchAll segments to avoid redundancy
+            // CatchAll segments are identified by their catchAll property
+            if (!param.catchAll) {
+              return {
+                ...param,
+                value: segment,
+              } as RouteParam;
+            }
+            return param as RouteParam;
           }
         }
         return {
           value: segment,
+          optional: false,
         };
       },
     );

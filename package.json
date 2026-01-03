@@ -1,11 +1,12 @@
 {
   "name": "convert-route",
   "version": "0.1.2",
-  "description": "Convert between rou3, Next.js, path-to-regexp and RegExp route patterns",
+  "description": "Convert between rou3, Next.js, path-to-regexp, URLPattern and RegExp route patterns",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsdown -c tsdown.config.ts",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:types": "tsc --noEmit",
     "format": "biome format --write .",
     "lint": "biome lint .",
     "release": "pnpm run build && changeset version && changeset tag && pnpm i && pnpm publish -r"
@@ -15,6 +16,7 @@
     "rou3",
     "path-to-regexp",
     "next-fs",
+    "urlpattern",
     "regexp"
   ],
   "author": "Joël Charles <joel.charles91@gmail.com>",
@@ -30,6 +32,7 @@
     "rou3": "^0.7.10",
     "tsdown": "^0.16.6",
     "typescript": "^5.9.3",
+    "urlpattern-polyfill": "^10.1.0",
     "vitest": "^3.2.4"
   },
   "files": [
@@ -41,7 +44,8 @@
     "./path-to-regexp-v6": "./dist/path-to-regexp-v6.js",
     "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
     "./next-fs": "./dist/next-fs.js",
-    "./regexp": "./dist/regexp.js"
+    "./regexp": "./dist/regexp.js",
+    "./urlpattern": "./dist/urlpattern.js"
   },
   "packageManager": "pnpm@10.11.0"
 }

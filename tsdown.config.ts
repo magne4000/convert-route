@@ -7,6 +7,7 @@ export default defineConfig({
     "path-to-regexp-v8": "./src/adapters/path-to-regexp-v8.ts",
     rou3: "./src/adapters/rou3.ts",
     regexp: "./src/adapters/regexp.ts",
+    urlpattern: "./src/adapters/urlpattern.ts",
     index: "./src/adapters/index.ts",
   },
   platform: "neutral",

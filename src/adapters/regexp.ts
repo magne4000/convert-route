@@ -5,9 +5,15 @@ function escapeStringRegexp(string: string) {
   return string.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&").replace(/-/g, "\\x2d");
 }
 
+/**
+ * Convert a RouteIR into a RegExp that matches the route's pathname.
+ *
+ * @param route - RouteIR whose `pathname` array describes ordered path segments. Catch-all segments produce capture groups (named if `catchAll.name` is present); segments marked `optional` are allowed to be absent.
+ * @returns A RegExp anchored to the start and end that matches the route path described by `route.pathname`, permitting an optional trailing slash.
+ */
 export function toRegexp(route: RouteIR): RegExp {
   const segments: string[] = [];
-  for (const segment of route.params) {
+  for (const segment of route.pathname) {
     if (segment.catchAll) {
       const name = segment.catchAll.name ? `?<${segment.catchAll.name}>` : "";
       const optional = segment.optional ? "*" : "+";
