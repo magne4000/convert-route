@@ -1,4 +1,7 @@
 import "urlpattern-polyfill";
+import { match as matchPtrv6 } from "path-to-regexpv6";
+import { match as matchPtrv8 } from "path-to-regexpv8";
+import { addRoute, createRouter, findRoute } from "rou3";
 import { describe, expect, test } from "vitest";
 import { fromNextFs } from "../src/adapters/next-fs.js";
 import {
@@ -15,6 +18,7 @@ import {
   fromURLPattern,
   toURLPattern,
   toURLPatternInput,
+  type URLPatternInit,
 } from "../src/adapters/urlpattern.js";
 import type { RouteIR } from "../src/types.js";
 import { join } from "../src/utils/join.js";
@@ -99,19 +103,75 @@ function testPatternToIR<const IR extends RouteIR>(
 }
 
 // Helper to test IR → Pattern with compile-time verification
-// FIXME also test match/no-match with actual routes
 function testIRToPattern(
   pattern: string,
   ir: RouteIR,
+  matches: {
+    shouldMatch: string[];
+    shouldNotMatch: string[];
+  },
   tests: IRToPatternTests,
 ): void {
   describe(pattern, () => {
-    test("rou3", () => tests.rou3(ir));
-    test("path-to-regexp-v6", () => tests["path-to-regexp-v6"](ir));
-    test("path-to-regexp-v8", () => tests["path-to-regexp-v8"](ir));
-    test("regexp", () => tests.regexp(ir));
-    test("urlpattern", () => tests.urlpattern(ir));
-    test("urlpatterninit", () => tests.urlpatterninit(ir));
+    describe("rou3", () => {
+      test("pattern", () => tests["path-to-regexp-v6"](ir));
+
+      const routes = toRou3(ir);
+      const router = createRouter();
+      routes.forEach((route) => {
+        addRoute(router, "GET", route, { payload: route });
+      });
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = findRoute(router, "GET", path);
+        expect(route).toBeTruthy();
+      });
+    });
+
+    describe("path-to-regexp-v6", () => {
+      test("pattern", () => tests["path-to-regexp-v6"](ir));
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = toPathToRegexpV6(ir);
+        expect(matchPtrv6(route)(path)).toBeTruthy();
+      });
+    });
+
+    describe("path-to-regexp-v8", () => {
+      test("pattern", () => tests["path-to-regexp-v8"](ir));
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = toPathToRegexpV8(ir);
+        expect(matchPtrv8(route)(path)).toBeTruthy();
+      });
+    });
+
+    describe("regexp", () => {
+      test("pattern", () => tests.regexp(ir));
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = toRegexp(ir);
+        expect(route.exec(path)).toBeTruthy();
+      });
+    });
+
+    describe("urlpattern", () => {
+      test("pattern", () => tests.urlpattern(ir));
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = toURLPattern(ir);
+        expect(route.exec({ pathname: path })).toBeTruthy();
+      });
+    });
+
+    describe("urlpatterninit", () => {
+      test("pattern", () => tests.urlpatterninit(ir));
+
+      test.for(matches.shouldMatch)("should match %s", (path) => {
+        const route = toURLPatternInput(ir);
+        expect(new URLPattern(route).exec({ pathname: path })).toBeTruthy();
+      });
+    });
   });
 }
 
@@ -356,6 +416,10 @@ describe("IR → Pattern (Generation Tests)", () => {
     "/",
     { pathname: [] },
     {
+      shouldMatch: ["/"],
+      shouldNotMatch: ["/a", "/a/b"],
+    },
+    {
       rou3: (ir) => {
         expect(toRou3(ir)).toEqual(["/"]);
       },
@@ -381,6 +445,10 @@ describe("IR → Pattern (Generation Tests)", () => {
     "/foo",
     {
       pathname: [{ value: "foo", optional: false }],
+    },
+    {
+      shouldMatch: ["/foo", "/foo/"],
+      shouldNotMatch: ["/", "/a", "/a/b", "/foo/a", "/foo/a/b"],
     },
     {
       rou3: (ir) => {
@@ -410,6 +478,18 @@ describe("IR → Pattern (Generation Tests)", () => {
       pathname: [
         { value: "foo", optional: false },
         { value: "bar", optional: false },
+      ],
+    },
+    {
+      shouldMatch: ["/foo/bar", "/foo/bar/"],
+      shouldNotMatch: [
+        "/",
+        "/a",
+        "/a/b",
+        "/foo/a",
+        "/foo/a/b",
+        "/foo/bar/a",
+        "/foo/bar/a/b",
       ],
     },
     {
@@ -446,6 +526,18 @@ describe("IR → Pattern (Generation Tests)", () => {
       ],
     },
     {
+      shouldMatch: ["/foo/a", "/foo/a/", "/foo/b"],
+      shouldNotMatch: [
+        "/",
+        "/a",
+        "/a/b",
+        "/foo",
+        "/foo/",
+        "/foo/bar/a",
+        "/foo/bar/a/b",
+      ],
+    },
+    {
       rou3: (ir) => {
         expect(toRou3(ir)).toEqual(["/foo/:id"]);
       },
@@ -477,6 +569,10 @@ describe("IR → Pattern (Generation Tests)", () => {
           catchAll: { name: "_1", greedy: false },
         },
       ],
+    },
+    {
+      shouldMatch: ["/foo", "/foo/", "/foo/a", "/foo/a/"],
+      shouldNotMatch: ["/", "/a", "/a/b", "/foo/a/b", "/foo/a/b/c"],
     },
     {
       rou3: (ir) => {
@@ -512,6 +608,16 @@ describe("IR → Pattern (Generation Tests)", () => {
       ],
     },
     {
+      shouldMatch: [
+        "/foo/a",
+        "/foo/b",
+        "/foo/a/b",
+        "/foo/a/b/c",
+        "/foo/a/b/c/",
+      ],
+      shouldNotMatch: ["/", "/a", "/a/b"],
+    },
+    {
       rou3: (ir) => {
         expect(toRou3(ir)).toEqual(["/foo/**:_1"]);
       },
@@ -545,6 +651,18 @@ describe("IR → Pattern (Generation Tests)", () => {
       ],
     },
     {
+      shouldMatch: [
+        "/foo",
+        "/foo/",
+        "/foo/a",
+        "/foo/a/",
+        "/foo/a/b",
+        "/foo/a/b/",
+        "/foo/a/b/c/d/e/f",
+      ],
+      shouldNotMatch: ["/", "/a", "/a/b"],
+    },
+    {
       rou3: (ir) => {
         expect(toRou3(ir)).toEqual(["/foo/**"]);
       },
@@ -576,6 +694,21 @@ describe("IR → Pattern (Generation Tests)", () => {
           catchAll: { name: "_1", greedy: false },
         },
         { value: "bar", optional: false },
+      ],
+    },
+    {
+      shouldMatch: ["/foo/bar", "/foo/bar/", "/foo/a/bar", "/foo/a/bar/"],
+      shouldNotMatch: [
+        "/",
+        "/a",
+        "/a/b",
+        "/foo/a/b",
+        "/foo/a/b/c",
+        "/foo/bar/a",
+        "/foo/bar/a/b",
+        "/foo/a/bar/b",
+        "/foo/a/b/bar/c",
+        "/foo/a/bar/b/c",
       ],
     },
     {
@@ -614,6 +747,20 @@ describe("IR → Pattern (Generation Tests)", () => {
           optional: false,
           catchAll: { name: "bar", greedy: false },
         },
+      ],
+    },
+    {
+      shouldMatch: ["/foo/a/bar/b", "/foo/c/bar/d/"],
+      shouldNotMatch: [
+        "/",
+        "/a",
+        "/a/b",
+        "/foo/a",
+        "/foo/a/b",
+        "/foo//bar",
+        "/foo/bar/b",
+        "/foo/a/bar/b/c",
+        "/foo/a/bar/b/c/d",
       ],
     },
     {
