@@ -25,12 +25,12 @@ import { join } from "../src/utils/join.js";
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 6 formats required
 type PatternToIRTests<IR extends RouteIR> = {
-  rou3: (ir: IR) => RouteIR | undefined;
-  "path-to-regexp-v6": (ir: IR) => RouteIR | undefined;
-  "path-to-regexp-v8": (ir: IR) => RouteIR | undefined;
-  urlpattern: (ir: IR) => RouteIR | undefined;
-  urlpatterninit: (ir: IR) => RouteIR | undefined;
-  nextfs: (ir: IR) => RouteIR | undefined;
+  rou3: (ir: IR) => RouteIR | void;
+  "path-to-regexp-v6": (ir: IR) => RouteIR | void;
+  "path-to-regexp-v8": (ir: IR) => RouteIR | void;
+  urlpattern: (ir: IR) => RouteIR | void;
+  urlpatterninit: (ir: IR) => RouteIR | void;
+  nextfs: (ir: IR) => RouteIR | void;
 };
 
 // For IR → Pattern: ALL 6 formats required
