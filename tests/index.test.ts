@@ -18,7 +18,6 @@ import {
   fromURLPattern,
   toURLPattern,
   toURLPatternInput,
-  type URLPatternInit,
 } from "../src/adapters/urlpattern.js";
 import type { RouteIR } from "../src/types.js";
 import { join } from "../src/utils/join.js";
@@ -26,12 +25,12 @@ import { join } from "../src/utils/join.js";
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 6 formats required
 type PatternToIRTests<IR extends RouteIR> = {
-  rou3: (ir: IR) => RouteIR | void;
-  "path-to-regexp-v6": (ir: IR) => RouteIR | void;
-  "path-to-regexp-v8": (ir: IR) => RouteIR | void;
-  urlpattern: (ir: IR) => RouteIR | void;
-  urlpatterninit: (ir: IR) => RouteIR | void;
-  nextfs: (ir: IR) => RouteIR | void;
+  rou3: (ir: IR) => RouteIR | undefined;
+  "path-to-regexp-v6": (ir: IR) => RouteIR | undefined;
+  "path-to-regexp-v8": (ir: IR) => RouteIR | undefined;
+  urlpattern: (ir: IR) => RouteIR | undefined;
+  urlpatterninit: (ir: IR) => RouteIR | undefined;
+  nextfs: (ir: IR) => RouteIR | undefined;
 };
 
 // For IR → Pattern: ALL 6 formats required
@@ -126,6 +125,11 @@ function testIRToPattern(
         const route = findRoute(router, "GET", path);
         expect(route).toBeTruthy();
       });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = findRoute(router, "GET", path);
+        expect(route).toBeFalsy();
+      });
     });
 
     describe("path-to-regexp-v6", () => {
@@ -134,6 +138,11 @@ function testIRToPattern(
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toPathToRegexpV6(ir);
         expect(matchPtrv6(route)(path)).toBeTruthy();
+      });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = toPathToRegexpV6(ir);
+        expect(matchPtrv6(route)(path)).toBeFalsy();
       });
     });
 
@@ -144,6 +153,11 @@ function testIRToPattern(
         const route = toPathToRegexpV8(ir);
         expect(matchPtrv8(route)(path)).toBeTruthy();
       });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = toPathToRegexpV8(ir);
+        expect(matchPtrv8(route)(path)).toBeFalsy();
+      });
     });
 
     describe("regexp", () => {
@@ -152,6 +166,11 @@ function testIRToPattern(
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toRegexp(ir);
         expect(route.exec(path)).toBeTruthy();
+      });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = toRegexp(ir);
+        expect(route.exec(path)).toBeFalsy();
       });
     });
 
@@ -162,6 +181,11 @@ function testIRToPattern(
         const route = toURLPattern(ir);
         expect(route.exec({ pathname: path })).toBeTruthy();
       });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = toURLPattern(ir);
+        expect(route.exec({ pathname: path })).toBeFalsy();
+      });
     });
 
     describe("urlpatterninit", () => {
@@ -170,6 +194,11 @@ function testIRToPattern(
       test.for(matches.shouldMatch)("should match %s", (path) => {
         const route = toURLPatternInput(ir);
         expect(new URLPattern(route).exec({ pathname: path })).toBeTruthy();
+      });
+
+      test.for(matches.shouldNotMatch)("should not match %s", (path) => {
+        const route = toURLPatternInput(ir);
+        expect(new URLPattern(route).exec({ pathname: path })).toBeFalsy();
       });
     });
   });
