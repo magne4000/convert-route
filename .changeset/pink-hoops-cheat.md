@@ -2,4 +2,4 @@
 "convert-route": minor
 ---
 
-feat: ad support from URLPattern and URLPatternInit
+feat: add support from URLPattern and URLPatternInit

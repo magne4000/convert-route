@@ -2,4 +2,4 @@
 "convert-route": major
 ---
 
-refactor!: simplified Intemediate Representation
+refactor!: simplified Intermediate Representation

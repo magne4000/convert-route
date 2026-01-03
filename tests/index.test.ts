@@ -2,7 +2,7 @@ import "urlpattern-polyfill";
 import { match as matchPtrv6 } from "path-to-regexpv6";
 import { match as matchPtrv8 } from "path-to-regexpv8";
 import { addRoute, createRouter, findRoute } from "rou3";
-import { describe, expect, test } from "vitest";
+import { describe, expect, type TestContext, test } from "vitest";
 import { fromNextFs } from "../src/adapters/next-fs.js";
 import {
   fromPathToRegexpV6,
@@ -25,12 +25,18 @@ import { join } from "../src/utils/join.js";
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 6 formats required
 type PatternToIRTests<IR extends RouteIR> = {
-  rou3: (ir: IR) => RouteIR | void;
-  "path-to-regexp-v6": (ir: IR) => RouteIR | void;
-  "path-to-regexp-v8": (ir: IR) => RouteIR | void;
-  urlpattern: (ir: IR) => RouteIR | void;
-  urlpatterninit: (ir: IR) => RouteIR | void;
-  nextfs: (ir: IR) => RouteIR | void;
+  rou3: (ir: IR, context: TestContext & object) => RouteIR | void;
+  "path-to-regexp-v6": (
+    ir: IR,
+    context: TestContext & object,
+  ) => RouteIR | void;
+  "path-to-regexp-v8": (
+    ir: IR,
+    context: TestContext & object,
+  ) => RouteIR | void;
+  urlpattern: (ir: IR, context: TestContext & object) => RouteIR | void;
+  urlpatterninit: (ir: IR, context: TestContext & object) => RouteIR | void;
+  nextfs: (ir: IR, context: TestContext & object) => RouteIR | void;
 };
 
 // For IR → Pattern: ALL 6 formats required
@@ -50,48 +56,48 @@ function testPatternToIR<const IR extends RouteIR>(
   tests: PatternToIRTests<IR>,
 ): void {
   describe(pattern, () => {
-    test("rou3", () => {
-      const res = tests.rou3(ir);
+    test("rou3", (context) => {
+      const res = tests.rou3(ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
         expect.hasAssertions();
       }
     });
-    test("path-to-regexp-v6", () => {
-      const res = tests["path-to-regexp-v6"](ir);
+    test("path-to-regexp-v6", (context) => {
+      const res = tests["path-to-regexp-v6"](ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
         expect.hasAssertions();
       }
     });
-    test("path-to-regexp-v8", () => {
-      const res = tests["path-to-regexp-v8"](ir);
+    test("path-to-regexp-v8", (context) => {
+      const res = tests["path-to-regexp-v8"](ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
         expect.hasAssertions();
       }
     });
-    test("nextfs", () => {
-      const res = tests.nextfs(ir);
+    test("nextfs", (context) => {
+      const res = tests.nextfs(ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
         expect.hasAssertions();
       }
     });
-    test("urlpattern", () => {
-      const res = tests.urlpattern(ir);
+    test("urlpattern", (context) => {
+      const res = tests.urlpattern(ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
         expect.hasAssertions();
       }
     });
-    test("urlpatterninit", () => {
-      const res = tests.urlpatterninit(ir);
+    test("urlpatterninit", (context) => {
+      const res = tests.urlpatterninit(ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
@@ -114,7 +120,7 @@ function testIRToPattern(
   describe(pattern, () => {
     describe("rou3", () => {
       test("pattern", () => {
-        tests["path-to-regexp-v6"](ir);
+        tests.rou3(ir);
         expect.hasAssertions();
       });
 
@@ -361,9 +367,8 @@ describe("Pattern → IR (Parsing Tests)", () => {
           fooNamedIr,
         );
       },
-      nextfs: () => {
-        // No unnamed capturing group support
-        expect(fromNextFs("/foo/[[_1]]")).toEqual(fooNamedIr);
+      nextfs: (_, context) => {
+        context.skip("[[slug]] is not support by Next.js");
       },
     },
   );
@@ -453,7 +458,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpattern: () =>
         fromURLPattern(new URLPattern({ pathname: "/foo/:_1?/bar{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" }),
-      nextfs: () => fromNextFs("/foo/[[_1]]/bar"),
+      nextfs: (_, context) => {
+        context.skip("[[slug]] is not support by Next.js");
+      },
     },
   );
 });

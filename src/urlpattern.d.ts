@@ -1,5 +1,5 @@
-declare global {
-  import type { URLPattern as URLPatternPolyfill } from "urlpattern-polyfill";
+import type { URLPattern as URLPatternPolyfill } from "urlpattern-polyfill";
 
+declare global {
   interface URLPattern extends URLPatternPolyfill {}
 }

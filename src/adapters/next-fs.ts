@@ -17,13 +17,6 @@ const mapper = new SegmentMapper()
       greedy: true,
     },
   }))
-  .match(/^\[\[([^\]]+)]]$/, (match) => ({
-    optional: true,
-    catchAll: {
-      name: match[1],
-      greedy: false,
-    },
-  }))
   .match(/^\[([^\]]+)]$/, (match) => ({
     optional: false,
     catchAll: {
