@@ -51,6 +51,17 @@ const urlPatternMapper = new SegmentMapper()
     },
     optional: false,
   }))
+  .match(/^\*$/, () => ({
+    catchAll: {
+      greedy: true,
+    },
+    optional: true,
+  }))
+  .match(/.*\*.*/, () => {
+    throw new ConvertRouteError(
+      "[urlpattern] Wildcard is not supported as part of a pattern",
+    );
+  })
   .match(/^.*$/, () => ({
     optional: false,
   }));

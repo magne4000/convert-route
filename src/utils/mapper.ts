@@ -60,6 +60,7 @@ export class SegmentMapper {
         }
         return {
           value: segment,
+          optional: false,
         };
       },
     );

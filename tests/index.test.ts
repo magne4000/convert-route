@@ -13,6 +13,7 @@ import { toRegexp } from "../src/adapters/regexp.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import {
   fromURLPattern,
+  toURLPattern,
   toURLPatternInput,
 } from "../src/adapters/urlpattern.js";
 import type { RouteIR } from "../src/types.js";
@@ -20,13 +21,13 @@ import { join } from "../src/utils/join.js";
 
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 6 formats required
-type PatternToIRTests = {
-  rou3: () => RouteIR;
-  "path-to-regexp-v6": () => RouteIR;
-  "path-to-regexp-v8": () => RouteIR;
-  urlpattern: () => RouteIR;
-  urlpatterninit: () => RouteIR;
-  nextfs: () => RouteIR;
+type PatternToIRTests<IR extends RouteIR> = {
+  rou3: (ir: IR) => RouteIR | void;
+  "path-to-regexp-v6": (ir: IR) => RouteIR | void;
+  "path-to-regexp-v8": (ir: IR) => RouteIR | void;
+  urlpattern: (ir: IR) => RouteIR | void;
+  urlpatterninit: (ir: IR) => RouteIR | void;
+  nextfs: (ir: IR) => RouteIR | void;
 };
 
 // For IR → Pattern: ALL 6 formats required
@@ -40,34 +41,65 @@ type IRToPatternTests = {
 };
 
 // Helper to test Pattern → IR with compile-time verification
-function testPatternToIR(
+function testPatternToIR<const IR extends RouteIR>(
   pattern: string,
-  ir: RouteIR,
-  tests: PatternToIRTests,
+  ir: IR,
+  tests: PatternToIRTests<IR>,
 ): void {
   describe(pattern, () => {
     test("rou3", () => {
-      expect(tests.rou3()).toEqual(ir);
+      const res = tests.rou3(ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
     test("path-to-regexp-v6", () => {
-      expect(tests["path-to-regexp-v6"]()).toEqual(ir);
+      const res = tests["path-to-regexp-v6"](ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
     test("path-to-regexp-v8", () => {
-      expect(tests["path-to-regexp-v8"]()).toEqual(ir);
+      const res = tests["path-to-regexp-v8"](ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
     test("nextfs", () => {
-      expect(tests.nextfs()).toEqual(ir);
+      const res = tests.nextfs(ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
     test("urlpattern", () => {
-      expect(tests.urlpattern()).toEqual(ir);
+      const res = tests.urlpattern(ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
     test("urlpatterninit", () => {
-      expect(tests.urlpatterninit()).toEqual(ir);
+      const res = tests.urlpatterninit(ir);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
     });
   });
 }
 
 // Helper to test IR → Pattern with compile-time verification
+// FIXME also test match/no-match with actual routes
 function testIRToPattern(
   pattern: string,
   ir: RouteIR,
@@ -180,6 +212,15 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   );
 
+  const fooNamedIr = {
+    pathname: [
+      { value: "foo", optional: false },
+      {
+        optional: true,
+        catchAll: { greedy: false, name: "_1" },
+      },
+    ],
+  };
   testPatternToIR(
     "/foo/*",
     {
@@ -193,12 +234,30 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     {
       rou3: () => fromRou3("/foo/*"),
-      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1?"),
-      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/:_1}"),
-      urlpattern: () =>
-        fromURLPattern(new URLPattern({ pathname: "/foo/:_1?{/}?" })),
-      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?{/}?" }),
-      nextfs: () => fromNextFs("/foo/[[slug]]"),
+      "path-to-regexp-v6": () => {
+        // No unnamed capturing group support
+        expect(fromPathToRegexpV6("/foo/:_1?")).toEqual(fooNamedIr);
+      },
+      "path-to-regexp-v8": () => {
+        // No unnamed capturing group support
+        expect(fromPathToRegexpV8("/foo{/:_1}")).toEqual(fooNamedIr);
+      },
+      urlpattern: () => {
+        // No unnamed capturing group support
+        expect(
+          fromURLPattern(new URLPattern({ pathname: "/foo/:_1?{/}?" })),
+        ).toEqual(fooNamedIr);
+      },
+      urlpatterninit: () => {
+        // No unnamed capturing group support
+        expect(fromURLPattern({ pathname: "/foo/:_1?{/}?" })).toEqual(
+          fooNamedIr,
+        );
+      },
+      nextfs: () => {
+        // No unnamed capturing group support
+        expect(fromNextFs("/foo/[[_1]]")).toEqual(fooNamedIr);
+      },
     },
   );
 
@@ -220,7 +279,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpattern: () =>
         fromURLPattern(new URLPattern({ pathname: "/foo/:_1+{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1+{/}?" }),
-      nextfs: () => fromNextFs("/foo/[...slug]"),
+      nextfs: () => fromNextFs("/foo/[..._1]"),
     },
   );
 
@@ -237,12 +296,34 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
     {
       rou3: () => fromRou3("/foo/**"),
-      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1*"),
-      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/*_1}"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/(.*)"),
+      "path-to-regexp-v8": () => {
+        // No unnamed capturing group support
+        expect(fromPathToRegexpV8("/foo{/*_1}")).toEqual({
+          pathname: [
+            { value: "foo", optional: false },
+            {
+              optional: true,
+              catchAll: { greedy: true, name: "_1" },
+            },
+          ],
+        });
+      },
       urlpattern: () =>
-        fromURLPattern(new URLPattern({ pathname: "/foo/:_1*{/}?" })),
-      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1*{/}?" }),
-      nextfs: () => fromNextFs("/foo/[[..._1]]"),
+        fromURLPattern(new URLPattern({ pathname: "/foo/*{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/*{/}?" }),
+      nextfs: () => {
+        // No unnamed capturing group support
+        expect(fromNextFs("/foo/[[..._1]]")).toEqual({
+          pathname: [
+            { value: "foo", optional: false },
+            {
+              optional: true,
+              catchAll: { greedy: true, name: "_1" },
+            },
+          ],
+        });
+      },
     },
   );
 
@@ -259,7 +340,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       ],
     },
     {
-      rou3: () => fromRou3("/foo/*/bar"),
+      rou3: () => fromRou3("/foo/*:_1/bar"),
       "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1?/bar"),
       "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/:_1}/bar"),
       urlpattern: () =>
@@ -288,7 +369,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
@@ -315,7 +396,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
@@ -345,7 +426,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/bar\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/bar{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/bar{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/bar{/}?");
@@ -378,7 +459,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/(?<id>[^/]+)\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:id{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:id{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:id{/}?");
@@ -411,7 +492,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/?(?<_1>[^/]*)\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:_1?{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
@@ -444,7 +525,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/(?<_1>.+)\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1+{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:_1+{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1+{/}?");
@@ -477,7 +558,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/?(?<_1>.*)\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1*{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:_1*{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1*{/}?");
@@ -511,7 +592,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toRegexp(ir).source).toBe("^\\/foo\\/?(?<_1>[^/]*)\\/bar\\/?$");
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?/bar{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:_1?/bar{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?/bar{/}?");
@@ -551,7 +632,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         );
       },
       urlpattern: (ir) => {
-        expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
+        expect(toURLPattern(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
