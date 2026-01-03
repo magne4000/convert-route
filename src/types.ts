@@ -2,10 +2,12 @@ export type RouteParam =
   | {
       value: string;
       optional?: boolean;
+      catchAll?: never;
     }
   | {
+      value?: never;
       optional?: boolean;
-      catchAll?: {
+      catchAll: {
         name?: string;
         greedy: boolean;
       };

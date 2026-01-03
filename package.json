@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsdown -c tsdown.config.ts",
     "test": "vitest run",
+    "test:types": "tsc --noEmit",
     "format": "biome format --write .",
     "lint": "biome lint .",
     "release": "pnpm run build && changeset version && changeset tag && pnpm i && pnpm publish -r"

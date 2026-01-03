@@ -6,7 +6,7 @@ export type GetRouteParam = (
   separator: string,
   index: number,
   array: unknown[],
-) => Omit<RouteParam, "value"> & { value?: string };
+) => Omit<RouteParam, "value">;
 
 function* iterateWithSeparator(segments: string[]) {
   for (let i = 0; i < segments.length; i += 2) {
@@ -51,9 +51,9 @@ export class SegmentMapper {
             // CatchAll segments are identified by their catchAll property
             if (!param.catchAll) {
               return {
-                value: segment,
                 ...param,
-              };
+                value: segment,
+              } as RouteParam;
             }
             return param as RouteParam;
           }
