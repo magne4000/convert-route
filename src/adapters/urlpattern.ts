@@ -2,6 +2,12 @@ import type { RouteIR } from "../types.js";
 import { ConvertRouteError } from "../utils/error.js";
 import { SegmentMapper } from "../utils/mapper.js";
 
+/**
+ * Determine if a URLPattern component is the default or wildcard value.
+ *
+ * @param s - The string value (or `undefined`) to test
+ * @returns `true` if `s` is `undefined` or equal to `"*"`, `false` otherwise
+ */
 function isDefault(s: string | undefined) {
   return !s || s === "*";
 }
@@ -66,6 +72,13 @@ const urlPatternMapper = new SegmentMapper()
     optional: false,
   }));
 
+/**
+ * Converts a URLPattern (or URLPattern-like input string/object) into a RouteIR.
+ *
+ * @param pattern - A URLPattern instance or a URLPatternInit object, or a string pattern accepted by the URLPattern constructor.
+ * @returns A RouteIR with its `pathname` parsed from the provided pattern.
+ * @throws ConvertRouteError - If the pattern includes unsupported URLPattern components (protocol, hostname, port, username, password, search, hash) or if RegExp groups are present.
+ */
 export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   pattern: T,
 ): RouteIR {
@@ -106,6 +119,14 @@ export interface URLPatternOptions {
   trailingSlash?: boolean;
 }
 
+/**
+ * Convert a RouteIR into a browser-compatible URLPattern instance.
+ *
+ * @param route - The route intermediate representation to convert into a URLPattern
+ * @param options - Conversion options. `trailingSlash` (default `true`) controls whether the resulting pattern accepts an optional trailing slash.
+ * @returns The constructed `URLPattern` representing `route`
+ * @throws Error if the environment does not provide a URLPattern constructor
+ */
 export function toURLPattern(
   route: RouteIR,
   options?: URLPatternOptions,
@@ -114,6 +135,19 @@ export function toURLPattern(
   return new URLPatternConstructor(toURLPatternInput(route, options));
 }
 
+/**
+ * Builds a URLPattern-style pathname string from a RouteIR.
+ *
+ * Maps RouteIR pathname segments to URLPattern segment syntax:
+ * - Greedy catch-all => `/:name+` (required) or `/:name*` (optional)
+ * - Non-greedy single-segment catch-all => `/:name` (required) or `/:name?` (optional)
+ * - Literal segments => `/value`
+ * An empty route pathname becomes `/` (or `/{/}?` when trailing slash support is enabled). If the computed pathname is `""` or `"*"`, it is normalized to `"/*"`.
+ *
+ * @param route - The RouteIR to convert
+ * @param options - Conversion options; `trailingSlash` (default `true`) controls appending `"{/}?"` to allow an optional trailing slash
+ * @returns An object with the computed `pathname` suitable for constructing a URLPattern
+ */
 export function toURLPatternInput(
   route: RouteIR,
   options?: URLPatternOptions,
@@ -152,6 +186,12 @@ export function toURLPatternInput(
   };
 }
 
+/**
+ * Obtains the global URLPattern constructor, throwing if the environment does not provide it.
+ *
+ * @returns The global `URLPattern` constructor.
+ * @throws Error if `URLPattern` is not supported in the current environment.
+ */
 function getConstructor() {
   const URLPatternConstructor: typeof URLPattern | undefined =
     // biome-ignore lint/suspicious/noExplicitAny: check

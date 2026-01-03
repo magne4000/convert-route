@@ -25,6 +25,12 @@ const mapper = new SegmentMapper()
     },
   }));
 
+/**
+ * Create a RouteIR from a Next.js filesystem-style path.
+ *
+ * @param path - The filesystem route string using Next.js segment syntax (e.g., "users/[id]", "blog/[...slug]", or "docs/[[...rest]]")
+ * @returns The RouteIR whose `pathname` is the mapped/normalized route representation derived from `path`
+ */
 export function fromNextFs(path: string): RouteIR {
   return {
     pathname: mapper.exec(path),
