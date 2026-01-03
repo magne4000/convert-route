@@ -16,7 +16,6 @@ const mapper = new SegmentMapper(/({\/|\/)/)
       name: stripValue(match[1], separator),
       greedy: true,
     },
-    value: stripValue(segment, separator),
   }))
   .match(/^:(.+)$/, (match, segment, separator) => ({
     optional: isOptional(segment, separator),
@@ -24,7 +23,6 @@ const mapper = new SegmentMapper(/({\/|\/)/)
       name: stripValue(match[1], separator),
       greedy: false,
     },
-    value: stripValue(segment, separator),
   }))
   .match(/^.*$/, (_match, segment, separator) => ({
     optional: isOptional(segment, separator),
@@ -33,15 +31,14 @@ const mapper = new SegmentMapper(/({\/|\/)/)
 
 export function fromPathToRegexpV8(path: string): RouteIR {
   return {
-    pattern: path,
-    params: mapper.exec(path),
+    pathname: mapper.exec(path),
   };
 }
 
 export function toPathToRegexpV8(route: RouteIR): string {
   let i = 0;
-  if (route.params.length === 0) return "/";
-  return route.params
+  if (route.pathname.length === 0) return "/";
+  return route.pathname
     .map((r) => {
       if (r.catchAll?.greedy) {
         const name = r.catchAll.name || `_${++i}`;

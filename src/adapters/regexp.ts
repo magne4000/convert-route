@@ -7,7 +7,7 @@ function escapeStringRegexp(string: string) {
 
 export function toRegexp(route: RouteIR): RegExp {
   const segments: string[] = [];
-  for (const segment of route.params) {
+  for (const segment of route.pathname) {
     if (segment.catchAll) {
       const name = segment.catchAll.name ? `?<${segment.catchAll.name}>` : "";
       const optional = segment.optional ? "*" : "+";

@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-**convert-route** is a TypeScript library that converts between different route pattern formats including `path-to-regexp` (v6 and v8), `rou3`, Next.js file system routes, and RegExp. The repository is small (~380 lines of TypeScript source code) and follows modern JavaScript/TypeScript practices.
+**convert-route** is a TypeScript library that converts between different route pattern formats including `path-to-regexp` (v6 and v8), `rou3`, Next.js file system routes, URLPattern, and RegExp. The repository is small (~450 lines of TypeScript source code) and follows modern JavaScript/TypeScript practices.
 
 **Key Technologies:**
 - **Language:** TypeScript 5.9.3 targeting ES2022
@@ -58,9 +58,10 @@ The following commands work independently (no dependencies between them except f
    pnpm run test
    ```
    - Runs vitest test suite
-   - 643 total tests (611 active, 32 skipped)
+   - 1114 total tests (1046 active, 68 skipped/legacy failures)
    - Works directly on source files without requiring a build
    - Test files: `tests/index.test.ts` and `tests/fixtures.ts`
+   - Includes two-section fixture tests (33 tests) for clear validation
 
 ### CI Validation
 
@@ -110,6 +111,7 @@ Each adapter provides `from*` and/or `to*` functions:
 - `path-to-regexp-v8.ts` - Convert from/to path-to-regexp v8 format
 - `next-fs.ts` - Convert from Next.js file system routes (no toNextFs)
 - `regexp.ts` - Convert to RegExp (no fromRegexp)
+- `urlpattern.ts` - Convert from/to URLPattern and URLPatternInit formats with dedicated SegmentMapper
 
 **Utilities** (`src/utils/`):
 - `mapper.ts` - SegmentMapper for parsing route segments
@@ -117,8 +119,14 @@ Each adapter provides `from*` and/or `to*` functions:
 - `error.ts` - Error handling utilities
 
 ### Test Structure (`tests/`)
-- `index.test.ts` - Main test suite with 643 tests covering all adapters
-- `fixtures.ts` - Test fixtures and helper functions
+- `index.test.ts` - Main test suite with 1114 tests covering all adapters
+  - Legacy round-trip conversion tests (~1013 tests)
+  - Two-section fixture tests (~33 tests for Pattern→IR and IR→Pattern)
+- `fixtures.ts` - Test fixtures, helper functions, and two-section fixture arrays
+  - `inputFixtures[]` - Pattern → IR validation (23 fixtures)
+  - `outputFixtures[]` - IR → Pattern validation (10 fixtures)
+  - `normalizeIR()` - IR normalization helper for consistent comparisons
+  - Legacy `routes[]` - Original fixture format (being phased out)
 
 ### Distribution
 
@@ -148,6 +156,36 @@ Build outputs to `dist/` with:
 2. **Wrong package manager:** Must use `pnpm`, not `npm` or `yarn`
 3. **Build not required for tests:** Don't assume tests need build output
 4. **Import extensions:** Biome will fail if .js extensions are missing on imports
+
+### URLPattern Support
+
+The URLPattern adapter (`src/adapters/urlpattern.ts`) provides conversion between URLPattern/URLPatternInit and the internal RouteIR format.
+
+**Key Features:**
+- Dedicated SegmentMapper for URLPattern syntax (`:param`, `:param?`, `:param+`, `:param*`)
+- Automatic trailing slash support via `{/}?` suffix (default: true, opt-out available)
+- Conversion mappings:
+  - `/*param` (ptr v8) ↔ `:param+` (URLPattern) — required multi-segment
+  - `{/*param}` ↔ `:param*` — optional multi-segment
+  - `{/:param}` ↔ `:param?` — optional single segment
+
+**Functions:**
+- `fromURLPattern(pattern: URLPattern | URLPatternInit): RouteIR`
+- `toURLPattern(route: RouteIR, options?: URLPatternOptions): URLPattern`
+- `toURLPatternInput(route: RouteIR, options?: URLPatternOptions): URLPatternInit`
+
+**Limitations:**
+- Only `pathname` property supported (other URL parts throw `ConvertRouteError`)
+- Patterns with `hasRegExpGroups` not supported
+
+### Test Fixture Architecture
+
+Tests are organized in a two-section architecture with all fixtures inline in `tests/index.test.ts`:
+
+**Section 1: Pattern → IR** (23 tests) - Validates parsing from each format to normalized IR
+**Section 2: IR → Pattern** (10 tests) - Validates generation from IR to each format
+
+**IR Normalization:** `normalizeIR()` ensures consistent `optional` property (defaults to `false`) and property order, eliminating parser-specific IR variations.
 
 ### Development Workflow
 

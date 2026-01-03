@@ -1,5 +1,5 @@
 export type RouteParam = {
-  value: string;
+  value: string; // Only set for non-catchAll segments
   optional?: boolean;
   catchAll?: {
     name?: string;
@@ -7,7 +7,6 @@ export type RouteParam = {
   };
 };
 
-export interface RouteIR<P = string> {
-  pattern: P; // Original pattern as provided
-  params: RouteParam[]; // Named parameters
+export interface RouteIR {
+  pathname: RouteParam[]; // Route segments
 }

@@ -39,14 +39,13 @@ const mapper = new SegmentMapper()
 
 export function fromRou3(path: string): RouteIR {
   return {
-    pattern: path,
-    params: mapper.exec(path),
+    pathname: mapper.exec(path),
   };
 }
 
 export function toRou3(route: RouteIR): string[] {
   let i = 0;
-  const response = route.params.map((r) => {
+  const response = route.pathname.map((r) => {
     if (r.catchAll?.greedy) {
       return !r.optional ? `**:${r.catchAll.name || `_${++i}`}` : "**";
     }

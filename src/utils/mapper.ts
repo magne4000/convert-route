@@ -46,10 +46,16 @@ export class SegmentMapper {
         for (const [pattern, getParam] of this.mapping) {
           // biome-ignore lint/suspicious/noAssignInExpressions: ignore
           if ((match = segment.match(pattern)) !== null) {
-            return {
-              value: segment,
-              ...getParam(match, segment, separator, index, array),
-            };
+            const param = getParam(match, segment, separator, index, array);
+            // Only set value for non-catchAll segments to avoid redundancy
+            // CatchAll segments are identified by their catchAll property
+            if (!param.catchAll) {
+              return {
+                value: segment,
+                ...param,
+              };
+            }
+            return param as RouteParam;
           }
         }
         return {
