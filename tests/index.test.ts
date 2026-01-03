@@ -36,11 +36,11 @@ function normalizeIR(params: RouteParam[]): RouteParam[] {
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 6 formats required (including path-to-regexp-v6!)
 type PatternToIRTests = {
-  rou3: (ir) => void;
-  "path-to-regexp-v6": (ir) => void;
-  "path-to-regexp-v8": (ir) => void;
-  urlpattern: (ir) => void;
-  urlpatterninit: (ir) => void;
+  rou3: () => void;
+  "path-to-regexp-v6": () => void;
+  "path-to-regexp-v8": () => void;
+  urlpattern: () => void;
+  urlpatterninit: () => void;
   nextfs: () => void;
 };
 
@@ -193,8 +193,16 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
+  const irPathname_foo_id: RouteParam[] = [
+    { value: "foo", optional: false },
+    {
+      optional: false,
+      catchAll: { name: "id", greedy: false },
+    },
+  ];
+  
   testPatternToIR("/foo/:id", {
-    rou3: (ir) => {
+    rou3: () => {
       const result = fromRou3("/foo/:id");
       expect(normalizeIR(result.pathname)).toEqual([
         { value: "foo", optional: false },
@@ -257,7 +265,20 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
-  testPatternToIR("/foo/:foo/bar/:bar", {
+    const irPathname_foo_foo_bar_bar: RouteParam[] = [
+        { value: "foo", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "foo", greedy: false },
+        },
+        { value: "bar", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "bar", greedy: false },
+        },
+      ];
+  
+testPatternToIR("/foo/:foo/bar/:bar", {
     rou3: (ir) => {
       const result = fromRou3("/foo/:foo/bar/:bar");
       expect(normalizeIR(result.pathname)).toEqual([
@@ -351,7 +372,15 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
-  testPatternToIR("/foo/*", {
+    const irPathname_foo_star: RouteParam[] = [
+        { value: "foo", optional: false },
+        {
+          optional: true,
+          catchAll: { greedy: false },
+        },
+      ];
+  
+testPatternToIR("/foo/*", {
     rou3: (ir) => {
       const result = fromRou3("/foo/*");
       expect(normalizeIR(result.pathname)).toEqual([
@@ -415,7 +444,15 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
-  testPatternToIR("/foo/**:_1", {
+    const irPathname_foo_starstar_1: RouteParam[] = [
+        { value: "foo", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "_1", greedy: true },
+        },
+      ];
+  
+testPatternToIR("/foo/**:_1", {
     rou3: (ir) => {
       const result = fromRou3("/foo/**:_1");
       expect(normalizeIR(result.pathname)).toEqual([
@@ -479,7 +516,15 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
-  testPatternToIR("/foo/**", {
+    const irPathname_foo_starstar: RouteParam[] = [
+        { value: "foo", optional: false },
+        {
+          optional: true,
+          catchAll: { greedy: true },
+        },
+      ];
+  
+testPatternToIR("/foo/**", {
     rou3: (ir) => {
       const result = fromRou3("/foo/**");
       expect(normalizeIR(result.pathname)).toEqual([
@@ -543,7 +588,16 @@ describe("Pattern → IR (Parsing Tests)", () => {
     },
   });
 
-  testPatternToIR("/foo{/:_1}/bar", {
+    const irPathname_foo__1_bar: RouteParam[] = [
+        { value: "foo", optional: false },
+        {
+          optional: false,
+          catchAll: { greedy: false },
+        },
+        { value: "bar", optional: false },
+      ];
+  
+testPatternToIR("/foo{/:_1}/bar", {
     rou3: (ir) => {
       const result = fromRou3("/foo/*/bar");
       expect(normalizeIR(result.pathname)).toEqual([
