@@ -51,7 +51,9 @@ const urlPatternMapper = new SegmentMapper()
     },
     optional: false,
   }))
-  .match(/^.*$/, () => ({}));
+  .match(/^.*$/, () => ({
+    optional: false,
+  }));
 
 export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   pattern: T,

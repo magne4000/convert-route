@@ -13,6 +13,7 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^\(\.\+\)$/, () => ({
+    optional: false,
     catchAll: {
       greedy: true,
     },
@@ -42,12 +43,14 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^:(.+)\+$/, (match) => ({
+    optional: false,
     catchAll: {
       name: match[1],
       greedy: true,
     },
   }))
   .match(/^:(.+)$/, (match) => ({
+    optional: false,
     catchAll: {
       name: match[1],
       greedy: false,

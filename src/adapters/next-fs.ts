@@ -11,6 +11,7 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^\[\.\.\.([^\]]+)]$/, (match) => ({
+    optional: false,
     catchAll: {
       name: match[1],
       greedy: true,
@@ -24,6 +25,7 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^\[([^\]]+)]$/, (match) => ({
+    optional: false,
     catchAll: {
       name: match[1],
       greedy: false,

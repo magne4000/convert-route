@@ -25,12 +25,14 @@ const mapper = new SegmentMapper()
     },
   }))
   .match(/^\*\*:(.+)$/, (match) => ({
+    optional: false,
     catchAll: {
       greedy: true,
       name: match[1],
     },
   }))
   .match(/^:(.+)$/, (match) => ({
+    optional: false,
     catchAll: {
       greedy: false,
       name: match[1],
