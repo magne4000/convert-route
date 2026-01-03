@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsdown -c tsdown.config.ts",
-    "test": "vitest",
+    "test": "vitest run",
     "format": "biome format --write .",
     "lint": "biome lint .",
     "release": "pnpm run build && changeset version && changeset tag && pnpm i && pnpm publish -r"

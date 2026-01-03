@@ -74,7 +74,7 @@ export function fromURLPattern<T extends URLPattern | URLPatternInput>(
   }
 
   let pathname = obj.pathname ?? "*";
-  
+
   // Strip optional trailing slash pattern {/}? before parsing
   // This is added by toURLPatternInput for trailing slash support
   pathname = pathname.replace(/\{\/\}\?$/, "");
@@ -107,12 +107,12 @@ export function toURLPatternInput(
 ): { pathname: string } {
   const { trailingSlash = true } = options ?? {};
   let i = 0;
-  
+
   // Handle empty route (root path)
   if (route.pathname.length === 0) {
     return { pathname: trailingSlash ? "/{/}?" : "/" };
   }
-  
+
   const pathname = route.pathname
     .map((r) => {
       if (r.catchAll?.greedy) {
@@ -131,7 +131,7 @@ export function toURLPatternInput(
     .join("");
 
   const finalPathname = pathname === "" || pathname === "*" ? "/*" : pathname;
-  
+
   // Add optional trailing slash support by default to match path-to-regexp v8 behavior
   // Users can opt-out by passing { trailingSlash: false }
   return {

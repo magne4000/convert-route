@@ -1,47 +1,32 @@
 import "urlpattern-polyfill";
-import type { RouteParam, RouteIR } from "../src/types.js";
 import { describe, expect, test } from "vitest";
-import { fromPathToRegexpV6, toPathToRegexpV6 } from "../src/adapters/path-to-regexp-v6.js";
+import { fromNextFs } from "../src/adapters/next-fs.js";
+import {
+  fromPathToRegexpV6,
+  toPathToRegexpV6,
+} from "../src/adapters/path-to-regexp-v6.js";
 import {
   fromPathToRegexpV8,
   toPathToRegexpV8,
 } from "../src/adapters/path-to-regexp-v8.js";
+import { toRegexp } from "../src/adapters/regexp.js";
 import { fromRou3, toRou3 } from "../src/adapters/rou3.js";
 import {
   fromURLPattern,
   toURLPatternInput,
 } from "../src/adapters/urlpattern.js";
-import { toRegexp } from "../src/adapters/regexp.js";
-import { fromNextFs } from "../src/adapters/next-fs.js";
+import type { RouteIR } from "../src/types.js";
 import { join } from "../src/utils/join.js";
 
-function normalizeIR(params: RouteParam[]): RouteParam[] {
-  return params.map((param) => {
-    const normalized: RouteParam = {
-      value: param.value,
-      optional: param.optional ?? false,
-    };
-
-    if (param.catchAll) {
-      normalized.catchAll = {
-        name: param.catchAll.name,
-        greedy: param.catchAll.greedy,
-      };
-    }
-
-    return normalized;
-  });
-}
-
 // Type-safe test helpers to ensure complete coverage
-// For Pattern → IR: ALL 6 formats required (including path-to-regexp-v6!)
+// For Pattern → IR: ALL 6 formats required
 type PatternToIRTests = {
-  rou3: () => void;
-  "path-to-regexp-v6": () => void;
-  "path-to-regexp-v8": () => void;
-  urlpattern: () => void;
-  urlpatterninit: () => void;
-  nextfs: () => void;
+  rou3: () => RouteIR;
+  "path-to-regexp-v6": () => RouteIR;
+  "path-to-regexp-v8": () => RouteIR;
+  urlpattern: () => RouteIR;
+  urlpatterninit: () => RouteIR;
+  nextfs: () => RouteIR;
 };
 
 // For IR → Pattern: ALL 6 formats required
@@ -55,19 +40,39 @@ type IRToPatternTests = {
 };
 
 // Helper to test Pattern → IR with compile-time verification
-function testPatternToIR(pattern: string, tests: PatternToIRTests): void {
+function testPatternToIR(
+  pattern: string,
+  ir: RouteIR,
+  tests: PatternToIRTests,
+): void {
   describe(pattern, () => {
-    test("rou3", tests.rou3);
-    test("path-to-regexp-v6", tests["path-to-regexp-v6"]);
-    test("path-to-regexp-v8", tests["path-to-regexp-v8"]);
-    test("urlpattern", tests.urlpattern);
-    test("urlpatterninit", tests.urlpatterninit);
-    test("nextfs", tests.nextfs);
+    test("rou3", () => {
+      expect(tests.rou3()).toEqual(ir);
+    });
+    test("path-to-regexp-v6", () => {
+      expect(tests["path-to-regexp-v6"]()).toEqual(ir);
+    });
+    test("path-to-regexp-v8", () => {
+      expect(tests["path-to-regexp-v8"]()).toEqual(ir);
+    });
+    test("nextfs", () => {
+      expect(tests.nextfs()).toEqual(ir);
+    });
+    test("urlpattern", () => {
+      expect(tests.urlpattern()).toEqual(ir);
+    });
+    test("urlpatterninit", () => {
+      expect(tests.urlpatterninit()).toEqual(ir);
+    });
   });
 }
 
 // Helper to test IR → Pattern with compile-time verification
-function testIRToPattern(pattern: string, ir: RouteIR, tests: IRToPatternTests): void {
+function testIRToPattern(
+  pattern: string,
+  ir: RouteIR,
+  tests: IRToPatternTests,
+): void {
   describe(pattern, () => {
     test("rou3", () => tests.rou3(ir));
     test("path-to-regexp-v6", () => tests["path-to-regexp-v6"](ir));
@@ -79,593 +84,190 @@ function testIRToPattern(pattern: string, ir: RouteIR, tests: IRToPatternTests):
 }
 
 describe("Pattern → IR (Parsing Tests)", () => {
-  testPatternToIR("/", {
-    rou3: (ir) => {
-      const result = fromRou3("/");
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/");
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/");
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/");
-      expect(normalizeIR(result.pathname)).toEqual([]);
-    },
-  });
-
-  testPatternToIR("/foo", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-      ]);
-    },
-  });
-
-  testPatternToIR("/foo/bar", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/bar{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/bar{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        { value: "bar", optional: false },
-      ]);
-    },
-  });
-
-  const irPathname_foo_id: RouteParam[] = [
-    { value: "foo", optional: false },
+  testPatternToIR(
+    "/",
+    { pathname: [] },
     {
-      optional: false,
-      catchAll: { name: "id", greedy: false },
+      rou3: () => fromRou3("/"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/"),
+      urlpattern: () => fromURLPattern(new URLPattern({ pathname: "/{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/{/}?" }),
+      nextfs: () => fromNextFs("/"),
     },
-  ];
-  
-  testPatternToIR("/foo/:id", {
-    rou3: () => {
-      const result = fromRou3("/foo/:id");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:id");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo/:id");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:id{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:id{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[id]");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    },
-  });
+  );
 
-    const irPathname_foo_foo_bar_bar: RouteParam[] = [
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ];
-  
-testPatternToIR("/foo/:foo/bar/:bar", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
+  testPatternToIR(
+    "/foo",
+    { pathname: [{ value: "foo", optional: false }] },
+    {
+      rou3: () => fromRou3("/foo"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo{/}?" }),
+      nextfs: () => fromNextFs("/foo"),
     },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
-    },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo/:foo/bar/:bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[foo]/bar/[bar]");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "foo", greedy: false },
-        },
-        { value: "bar", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "bar", greedy: false },
-        },
-      ]);
-    },
-  });
+  );
 
-    const irPathname_foo_star: RouteParam[] = [
+  testPatternToIR(
+    "/foo/bar",
+    {
+      pathname: [
+        { value: "foo", optional: false },
+        { value: "bar", optional: false },
+      ],
+    },
+    {
+      rou3: () => fromRou3("/foo/bar"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/bar"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo/bar"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/bar{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/bar{/}?" }),
+      nextfs: () => fromNextFs("/foo/bar"),
+    },
+  );
+
+  testPatternToIR(
+    "/foo/:id",
+    {
+      pathname: [
+        { value: "foo", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "id", greedy: false },
+        },
+      ],
+    },
+    {
+      rou3: () => fromRou3("/foo/:id"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:id"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo/:id"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:id{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:id{/}?" }),
+      nextfs: () => fromNextFs("/foo/[id]"),
+    },
+  );
+
+  testPatternToIR(
+    "/foo/:foo/bar/:bar",
+    {
+      pathname: [
+        { value: "foo", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "foo", greedy: false },
+        },
+        { value: "bar", optional: false },
+        {
+          optional: false,
+          catchAll: { name: "bar", greedy: false },
+        },
+      ],
+    },
+    {
+      rou3: () => fromRou3("/foo/:foo/bar/:bar"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:foo/bar/:bar"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo/:foo/bar/:bar"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" })),
+      urlpatterninit: () =>
+        fromURLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" }),
+      nextfs: () => fromNextFs("/foo/[foo]/bar/[bar]"),
+    },
+  );
+
+  testPatternToIR(
+    "/foo/*",
+    {
+      pathname: [
         { value: "foo", optional: false },
         {
           optional: true,
           catchAll: { greedy: false },
         },
-      ];
-  
-testPatternToIR("/foo/*", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/*");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { greedy: false },
-        },
-      ]);
+      ],
     },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:_1?");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-      ]);
+    {
+      rou3: () => fromRou3("/foo/*"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1?"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/:_1}"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:_1?{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?{/}?" }),
+      nextfs: () => fromNextFs("/foo/[[slug]]"),
     },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo{/:_1}");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:_1?{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:_1?{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[[slug]]");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "slug", greedy: false },
-        },
-      ]);
-    },
-  });
+  );
 
-    const irPathname_foo_starstar_1: RouteParam[] = [
+  testPatternToIR(
+    "/foo/**:_1",
+    {
+      pathname: [
         { value: "foo", optional: false },
         {
           optional: false,
           catchAll: { name: "_1", greedy: true },
         },
-      ];
-  
-testPatternToIR("/foo/**:_1", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/**:_1");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
+      ],
     },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:_1+");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
+    {
+      rou3: () => fromRou3("/foo/**:_1"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1+"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo/*_1"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:_1+{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1+{/}?" }),
+      nextfs: () => fromNextFs("/foo/[...slug]"),
     },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo/*_1");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:_1+{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:_1+{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[...slug]");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { name: "slug", greedy: true },
-        },
-      ]);
-    },
-  });
+  );
 
-    const irPathname_foo_starstar: RouteParam[] = [
+  testPatternToIR(
+    "/foo/**",
+    {
+      pathname: [
         { value: "foo", optional: false },
         {
           optional: true,
           catchAll: { greedy: true },
         },
-      ];
-  
-testPatternToIR("/foo/**", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/**");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { greedy: true },
-        },
-      ]);
+      ],
     },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:_1*");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
+    {
+      rou3: () => fromRou3("/foo/**"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1*"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/*_1}"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:_1*{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1*{/}?" }),
+      nextfs: () => fromNextFs("/foo/[[..._1]]"),
     },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo{/*_1}");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:_1*{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:_1*{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[[..._1]]");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: true },
-        },
-      ]);
-    },
-  });
+  );
 
-    const irPathname_foo__1_bar: RouteParam[] = [
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { greedy: false },
-        },
-        { value: "bar", optional: false },
-      ];
-  
-testPatternToIR("/foo{/:_1}/bar", {
-    rou3: (ir) => {
-      const result = fromRou3("/foo/*/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: false,
-          catchAll: { greedy: false },
-        },
-        { value: "bar", optional: false },
-      ]);
-    },
-    "path-to-regexp-v6": (ir) => {
-      const result = fromPathToRegexpV6("/foo/:_1?/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
+  testPatternToIR(
+    "/foo{/:_1}/bar",
+    {
+      pathname: [
         { value: "foo", optional: false },
         {
           optional: true,
           catchAll: { name: "_1", greedy: false },
         },
         { value: "bar", optional: false },
-      ]);
+      ],
     },
-    "path-to-regexp-v8": (ir) => {
-      const result = fromPathToRegexpV8("/foo{/:_1}/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-        { value: "bar", optional: false },
-      ]);
+    {
+      rou3: () => fromRou3("/foo/*/bar"),
+      "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1?/bar"),
+      "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/:_1}/bar"),
+      urlpattern: () =>
+        fromURLPattern(new URLPattern({ pathname: "/foo/:_1?/bar{/}?" })),
+      urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" }),
+      nextfs: () => fromNextFs("/foo/[[slug]]/bar"),
     },
-    urlpattern: (ir) => {
-      const pattern = new URLPattern({ pathname: "/foo/:_1?/bar{/}?" });
-      const result = fromURLPattern(pattern);
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-        { value: "bar", optional: false },
-      ]);
-    },
-    urlpatterninit: (ir) => {
-      const result = fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" });
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "_1", greedy: false },
-        },
-        { value: "bar", optional: false },
-      ]);
-    },
-    nextfs: () => {
-      const result = fromNextFs("/foo/[[slug]]/bar");
-      expect(normalizeIR(result.pathname)).toEqual([
-        { value: "foo", optional: false },
-        {
-          optional: true,
-          catchAll: { name: "slug", greedy: false },
-        },
-        { value: "bar", optional: false },
-      ]);
-    },
-  });
+  );
 });
 
 describe("IR → Pattern (Generation Tests)", () => {
@@ -691,7 +293,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -718,7 +320,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -748,7 +350,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/bar{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -781,7 +383,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:id{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -814,7 +416,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -847,7 +449,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1+{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -880,7 +482,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1*{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -914,7 +516,7 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?/bar{/}?");
       },
-    }
+    },
   );
 
   testIRToPattern(
@@ -944,7 +546,9 @@ describe("IR → Pattern (Generation Tests)", () => {
         expect(toPathToRegexpV8(ir)).toBe("/foo/:foo/bar/:bar");
       },
       regexp: (ir) => {
-        expect(toRegexp(ir).source).toBe("^\\/foo\\/(?<foo>[^/]+)\\/bar\\/(?<bar>[^/]+)\\/?$");
+        expect(toRegexp(ir).source).toBe(
+          "^\\/foo\\/(?<foo>[^/]+)\\/bar\\/(?<bar>[^/]+)\\/?$",
+        );
       },
       urlpattern: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
@@ -952,40 +556,11 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
       },
-    }
+    },
   );
 });
 
 describe("Helper Functions", () => {
-  describe("normalizeIR", () => {
-    test("adds missing optional property", () => {
-      const params: RouteParam[] = [{ value: "foo" }];
-      const normalized = normalizeIR(params);
-      expect(normalized).toEqual([{ value: "foo", optional: false }]);
-    });
-
-    test("preserves existing optional property", () => {
-      const params: RouteParam[] = [{ value: "foo", optional: true }];
-      const normalized = normalizeIR(params);
-      expect(normalized).toEqual([{ value: "foo", optional: true }]);
-    });
-
-    test("normalizes catchAll structure", () => {
-      const params: RouteParam[] = [
-        {
-          catchAll: { name: "id", greedy: false },
-        },
-      ];
-      const normalized = normalizeIR(params);
-      expect(normalized).toEqual([
-        {
-          optional: false,
-          catchAll: { name: "id", greedy: false },
-        },
-      ]);
-    });
-  });
-
   describe("join", () => {
     test("joins single route", () => {
       expect(join(["foo"])).toEqual(["/foo"]);
