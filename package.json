@@ -45,7 +45,8 @@
     "./path-to-regexp-v8": "./dist/path-to-regexp-v8.js",
     "./next-fs": "./dist/next-fs.js",
     "./regexp": "./dist/regexp.js",
-    "./urlpattern": "./dist/urlpattern.js"
+    "./urlpattern": "./dist/urlpattern.js",
+    "./vike": "./dist/vike.js"
   },
   "packageManager": "pnpm@10.11.0"
 }
