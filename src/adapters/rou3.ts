@@ -59,14 +59,18 @@ export function fromRou3(path: string): RouteIR {
  */
 export function toRou3(route: RouteIR): string[] {
   let i = 0;
-  const response = route.pathname.map((r) => {
+  const response = route.pathname.map((r, j) => {
     if (r.catchAll?.greedy) {
       return !r.optional ? `**:${r.catchAll.name || `_${++i}`}` : "**";
     }
     if (r.catchAll && !r.catchAll.greedy) {
       // Optional parameters in rou3 are only supported if they are in the last segment.
       // If we found one in another segment, we must return a new route without this segment.
-      return r.optional ? [null, `*`] : `:${r.catchAll.name || `_${++i}`}`;
+      return r.optional
+        ? j === route.pathname.length - 1
+          ? "*"
+          : [null, "*"]
+        : `:${r.catchAll.name || `_${++i}`}`;
     }
     return r.value;
   });

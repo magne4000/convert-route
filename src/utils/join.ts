@@ -4,10 +4,9 @@ function isValidSegment(segment: NullableString): segment is string {
   return segment !== null && segment !== undefined && segment !== "";
 }
 
-function generateCombinations(arrays: NullableString[][]): string[][] {
+function generateCombinations(arrays: NullableString[][]): NullableString[][] {
   if (arrays.length === 0) return [[]];
-  if (arrays.length === 1)
-    return arrays[0].filter(isValidSegment).map((item) => [item]);
+  if (arrays.length === 1) return arrays[0].map((item) => [item]);
 
   const [first, ...rest] = arrays;
   const restCombinations = generateCombinations(rest);
@@ -15,10 +14,16 @@ function generateCombinations(arrays: NullableString[][]): string[][] {
   const result: string[][] = [];
   for (const item of first) {
     for (const combination of restCombinations) {
+      const filteredCombination = combination.filter(isValidSegment);
+      const hasNull = filteredCombination.length < combination.length;
+
       if (isValidSegment(item)) {
-        result.push([item, ...combination]);
+        if (hasNull && filteredCombination.length > 0) {
+          result.push([item]);
+        }
+        result.push([item, ...filteredCombination]);
       } else {
-        result.push([...combination]);
+        result.push([...filteredCombination]);
       }
     }
   }

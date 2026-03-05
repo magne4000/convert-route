@@ -19,11 +19,12 @@ import {
   toURLPattern,
   toURLPatternInput,
 } from "../src/adapters/urlpattern.js";
+import { fromVike, toVike } from "../src/adapters/vike.js";
 import type { RouteIR } from "../src/types.js";
 import { join } from "../src/utils/join.js";
 
 // Type-safe test helpers to ensure complete coverage
-// For Pattern → IR: ALL 6 formats required
+// For Pattern → IR: ALL 7 formats required
 type PatternToIRTests<IR extends RouteIR> = {
   rou3: (ir: IR, context: TestContext & object) => RouteIR | void;
   "path-to-regexp-v6": (
@@ -37,9 +38,10 @@ type PatternToIRTests<IR extends RouteIR> = {
   urlpattern: (ir: IR, context: TestContext & object) => RouteIR | void;
   urlpatterninit: (ir: IR, context: TestContext & object) => RouteIR | void;
   nextfs: (ir: IR, context: TestContext & object) => RouteIR | void;
+  vike: (ir: IR, context: TestContext & object) => RouteIR | void;
 };
 
-// For IR → Pattern: ALL 6 formats required
+// For IR → Pattern: ALL 7 formats required
 type IRToPatternTests = {
   rou3: (ir: RouteIR) => void;
   "path-to-regexp-v6": (ir: RouteIR) => void;
@@ -47,6 +49,7 @@ type IRToPatternTests = {
   regexp: (ir: RouteIR) => void;
   urlpattern: (ir: RouteIR) => void;
   urlpatterninit: (ir: RouteIR) => void;
+  vike: (ir: RouteIR) => void;
 };
 
 // Helper to test Pattern → IR with compile-time verification
@@ -98,6 +101,14 @@ function testPatternToIR<const IR extends RouteIR>(
     });
     test("urlpatterninit", (context) => {
       const res = tests.urlpatterninit(ir, context);
+      if (res) {
+        expect(res).toEqual(ir);
+      } else {
+        expect.hasAssertions();
+      }
+    });
+    test("vike", (context) => {
+      const res = tests.vike(ir, context);
       if (res) {
         expect(res).toEqual(ir);
       } else {
@@ -225,6 +236,13 @@ function testIRToPattern(
         expect(new URLPattern(route).exec({ pathname: path })).toBeFalsy();
       });
     });
+
+    describe("vike", () => {
+      test("pattern", () => {
+        tests.vike(ir);
+        expect.hasAssertions();
+      });
+    });
   });
 }
 
@@ -239,6 +257,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpattern: () => fromURLPattern(new URLPattern({ pathname: "/{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/{/}?" }),
       nextfs: () => fromNextFs("/"),
+      vike: () => fromVike("/"),
     },
   );
 
@@ -253,6 +272,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
         fromURLPattern(new URLPattern({ pathname: "/foo{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo{/}?" }),
       nextfs: () => fromNextFs("/foo"),
+      vike: () => fromVike("/foo"),
     },
   );
 
@@ -272,6 +292,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
         fromURLPattern(new URLPattern({ pathname: "/foo/bar{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/bar{/}?" }),
       nextfs: () => fromNextFs("/foo/bar"),
+      vike: () => fromVike("/foo/bar"),
     },
   );
 
@@ -294,6 +315,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
         fromURLPattern(new URLPattern({ pathname: "/foo/:id{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:id{/}?" }),
       nextfs: () => fromNextFs("/foo/[id]"),
+      vike: () => fromVike("/foo/@id"),
     },
   );
 
@@ -322,6 +344,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpatterninit: () =>
         fromURLPattern({ pathname: "/foo/:foo/bar/:bar{/}?" }),
       nextfs: () => fromNextFs("/foo/[foo]/bar/[bar]"),
+      vike: () => fromVike("/foo/@foo/bar/@bar"),
     },
   );
 
@@ -370,6 +393,11 @@ describe("Pattern → IR (Parsing Tests)", () => {
       nextfs: (_, context) => {
         context.skip("[[slug]] is not supported by Next.js");
       },
+      vike: (_, context) => {
+        context.skip(
+          "Vike doesn't support optional non-greedy params without a prefix",
+        );
+      },
     },
   );
 
@@ -392,6 +420,9 @@ describe("Pattern → IR (Parsing Tests)", () => {
         fromURLPattern(new URLPattern({ pathname: "/foo/:_1+{/}?" })),
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1+{/}?" }),
       nextfs: () => fromNextFs("/foo/[..._1]"),
+      vike: (_, context) => {
+        context.skip("Vike doesn't support named greedy catch-all params");
+      },
     },
   );
 
@@ -436,6 +467,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
           ],
         });
       },
+      vike: () => fromVike("/foo*"),
     },
   );
 
@@ -460,6 +492,11 @@ describe("Pattern → IR (Parsing Tests)", () => {
       urlpatterninit: () => fromURLPattern({ pathname: "/foo/:_1?/bar{/}?" }),
       nextfs: (_, context) => {
         context.skip("[[slug]] is not supported by Next.js");
+      },
+      vike: (_, context) => {
+        context.skip(
+          "Vike doesn't support optional params in non-last position",
+        );
       },
     },
   );
@@ -492,6 +529,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/{/}?");
       },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/"]);
+      },
     },
   );
 
@@ -522,6 +562,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo"]);
       },
     },
   );
@@ -564,6 +607,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/bar{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo/bar"]);
       },
     },
   );
@@ -610,6 +656,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:id{/}?");
       },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo/@id"]);
+      },
     },
   );
 
@@ -646,6 +695,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo", "/foo/@_1"]);
       },
     },
   );
@@ -689,6 +741,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1+{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo/*"]);
       },
     },
   );
@@ -734,6 +789,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1*{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo*"]);
       },
     },
   );
@@ -783,6 +841,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:_1?/bar{/}?");
+      },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo/bar", "/foo/@_1/bar"]);
       },
     },
   );
@@ -838,6 +899,9 @@ describe("IR → Pattern (Generation Tests)", () => {
       urlpatterninit: (ir) => {
         expect(toURLPatternInput(ir).pathname).toBe("/foo/:foo/bar/:bar{/}?");
       },
+      vike: (ir) => {
+        expect(toVike(ir)).toEqual(["/foo/@foo/bar/@bar"]);
+      },
     },
   );
 });
@@ -862,6 +926,10 @@ describe("Helper Functions", () => {
 
     test("handles null values", () => {
       expect(join([null, "foo"])).toEqual(["/foo"]);
+    });
+
+    test("handles nested null values", () => {
+      expect(join(["foo", [null, "bar"]])).toEqual(["/foo", "/foo/bar"]);
     });
 
     test("flattens nested arrays", () => {

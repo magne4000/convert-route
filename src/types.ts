@@ -15,3 +15,6 @@ export type RouteParam = { optional: boolean } & (
 export interface RouteIR {
   pathname: RouteParam[]; // Route segments
 }
+
+export type RouteParamOptionalValue = Omit<RouteParam, "value"> &
+  Partial<Pick<RouteParam, "value">>;
