@@ -1,5 +1,11 @@
 # convert-route
 
+## 1.1.1
+
+### Patch Changes
+
+- 69c98ed: fix: ensure vike helpers are exported
+
 ## 1.1.0
 
 ### Minor Changes
