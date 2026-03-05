@@ -1,4 +1,4 @@
-import type { RouteParam } from "../types.js";
+import type { RouteParam, RouteParamOptionalValue } from "../types.js";
 
 export type GetRouteParam = (
   match: RegExpMatchArray,
@@ -6,7 +6,7 @@ export type GetRouteParam = (
   separator: string,
   index: number,
   array: unknown[],
-) => Omit<RouteParam, "value">;
+) => RouteParamOptionalValue | RouteParamOptionalValue[];
 
 function* iterateWithSeparator(segments: string[]) {
   for (let i = 0; i < segments.length; i += 2) {
@@ -38,21 +38,24 @@ export class SegmentMapper {
       // sliced == ['/']
       return [];
     }
-    return Array.from(iterateWithSeparator(sliced)).map(
+    return Array.from(iterateWithSeparator(sliced)).flatMap(
       ([separator, segment], index, array) => {
         for (const [pattern, getParam] of this.mapping) {
           // biome-ignore lint/suspicious/noAssignInExpressions: ignore
           if ((match = segment.match(pattern)) !== null) {
-            const param = getParam(match, segment, separator, index, array);
-            // Only set value for non-catchAll segments to avoid redundancy
-            // CatchAll segments are identified by their catchAll property
-            if (!param.catchAll) {
-              return {
-                ...param,
-                value: segment,
-              } as RouteParam;
-            }
-            return param as RouteParam;
+            const _params = getParam(match, segment, separator, index, array);
+            const params = Array.isArray(_params) ? _params : [_params];
+            return params.map((param) => {
+              // Only set value for non-catchAll segments to avoid redundancy
+              // CatchAll segments are identified by their catchAll property
+              if (!param.value && !param.catchAll) {
+                return {
+                  ...param,
+                  value: segment,
+                } as RouteParam;
+              }
+              return param as RouteParam;
+            });
           }
         }
         return {
