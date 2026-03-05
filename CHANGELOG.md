@@ -1,5 +1,11 @@
 # convert-route
 
+## 1.1.0
+
+### Minor Changes
+
+- 2f49e13: feat: added support for Vike route format
+
 ## 1.0.0
 
 ### Major Changes
