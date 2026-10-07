@@ -38,23 +38,25 @@ console.log(rou3Pattern); // ['/users/**:id']
 
 ## Supported Features
 
-| Feature              | Next.js        | rou3           | path-to-regexp v6 | path-to-regexp v8 | URLPattern | RegExp |
-|----------------------|----------------|----------------|-------------------|-------------------|------------|--------|
-| Named Segments       | `[param]`      | `:param`       | `:param`          | `:param`          | `:param`   | Yes    |
-| Optional Segments    | No             | `*`, `*:param` | `:param?`         | `{/:param}`       | `:param?`  | Yes    |
-| Catch-all (Wildcard) | `[...param]`   | `**:param`     | `:param+`         | `*param`          | `:param+`  | Yes    |
-| Optional Catch-all   | `[[...param]]` | `**`           | `:param*`         | `{/*param}`       | `:param*`  | Yes    |
-| Suffix Matching      | No             | WIP            | WIP               | WIP               | WIP        | WIP    |
-| Prefix Matching      | No             | WIP            | WIP               | WIP               | WIP        | WIP    |
+| Feature              | Next.js        | rou3                  | path-to-regexp v6 | path-to-regexp v8 | URLPattern | RegExp |
+|----------------------|----------------|-----------------------|-------------------|-------------------|------------|--------|
+| Named Segments       | `[param]`      | `:param`              | `:param`          | `:param`          | `:param`   | Yes    |
+| Optional Segments    | No             | `:param?`             | `:param?`         | `{/:param}`       | `:param?`  | Yes    |
+| Catch-all (Wildcard) | `[...param]`   | `**:param`, `:param+` | `:param+`         | `*param`          | `:param+`  | Yes    |
+| Optional Catch-all   | `[[...param]]` | `**`, `:param*`, `*`  | `:param*`         | `{/*param}`       | `:param*`  | Yes    |
+| Suffix Matching      | No             | WIP                   | WIP               | WIP               | WIP        | WIP    |
+| Prefix Matching      | No             | WIP                   | WIP               | WIP               | WIP        | WIP    |
 
 ### rou3
+
+Patterns follow the rou3 v0.12+ (1.x) syntax, which is aligned with URLPattern: `*` matches the rest of the path, `/` included, and a route holds at most one catch-all.
 
 ```ts
 import { fromRou3, toRou3 } from 'convert-route/rou3';
 
 const intermediateRepresentation = fromRou3('/users/:id');
 const rou3Pattern = toRou3(intermediateRepresentation);
-// Note: toRou3 returns an array of patterns since some patterns need to be expressed as a combination of multiple patterns
+// Note: toRou3 returns an array of patterns, though rou3 v0.12+ always needs a single one
 console.log(rou3Pattern); // ['/users/:id']
 ```
 

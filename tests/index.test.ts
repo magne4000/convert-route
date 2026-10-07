@@ -22,6 +22,7 @@ import {
 import { fromVike, toVike } from "../src/adapters/vike.js";
 import type { RouteIR } from "../src/types.js";
 import { join } from "../src/utils/join.js";
+import { ConvertRouteError } from "../src/utils/error.js";
 
 // Type-safe test helpers to ensure complete coverage
 // For Pattern → IR: ALL 7 formats required
@@ -369,7 +370,10 @@ describe("Pattern → IR (Parsing Tests)", () => {
       ],
     },
     {
-      rou3: () => fromRou3("/foo/*"),
+      rou3: () => {
+        // No unnamed optional segment support: `*` matches the rest of the path
+        expect(fromRou3("/foo/:_1?")).toEqual(fooNamedIr);
+      },
       "path-to-regexp-v6": () => {
         // No unnamed capturing group support
         expect(fromPathToRegexpV6("/foo/:_1?")).toEqual(fooNamedIr);
@@ -413,7 +417,10 @@ describe("Pattern → IR (Parsing Tests)", () => {
       ],
     },
     {
-      rou3: () => fromRou3("/foo/**:_1"),
+      rou3: (ir) => {
+        expect(fromRou3("/foo/:_1+")).toEqual(ir);
+        return fromRou3("/foo/**:_1");
+      },
       "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1+"),
       "path-to-regexp-v8": () => fromPathToRegexpV8("/foo/*_1"),
       urlpattern: () =>
@@ -438,7 +445,20 @@ describe("Pattern → IR (Parsing Tests)", () => {
       ],
     },
     {
-      rou3: () => fromRou3("/foo/**"),
+      rou3: (ir) => {
+        // A trailing `*` matches the rest of the path too
+        expect(fromRou3("/foo/*")).toEqual(ir);
+        expect(fromRou3("/foo/:_1*")).toEqual({
+          pathname: [
+            { value: "foo", optional: false },
+            {
+              optional: true,
+              catchAll: { greedy: true, name: "_1" },
+            },
+          ],
+        });
+        return fromRou3("/foo/**");
+      },
       "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/(.*)"),
       "path-to-regexp-v8": () => {
         // No unnamed capturing group support
@@ -484,7 +504,7 @@ describe("Pattern → IR (Parsing Tests)", () => {
       ],
     },
     {
-      rou3: () => fromRou3("/foo/*:_1/bar"),
+      rou3: () => fromRou3("/foo/:_1?/bar"),
       "path-to-regexp-v6": () => fromPathToRegexpV6("/foo/:_1?/bar"),
       "path-to-regexp-v8": () => fromPathToRegexpV8("/foo{/:_1}/bar"),
       urlpattern: () =>
@@ -679,7 +699,7 @@ describe("IR → Pattern (Generation Tests)", () => {
     },
     {
       rou3: (ir) => {
-        expect(toRou3(ir)).toEqual(["/foo/*"]);
+        expect(toRou3(ir)).toEqual(["/foo/:_1?"]);
       },
       "path-to-regexp-v6": (ir) => {
         expect(toPathToRegexpV6(ir)).toBe("/foo/:_1?");
@@ -773,7 +793,7 @@ describe("IR → Pattern (Generation Tests)", () => {
     },
     {
       rou3: (ir) => {
-        expect(toRou3(ir)).toEqual(["/foo/**"]);
+        expect(toRou3(ir)).toEqual(["/foo/:_1*"]);
       },
       "path-to-regexp-v6": (ir) => {
         expect(toPathToRegexpV6(ir)).toBe("/foo/:_1*");
@@ -816,6 +836,7 @@ describe("IR → Pattern (Generation Tests)", () => {
         "/a/b",
         "/foo/a/b",
         "/foo/a/b/c",
+        "/foo/a/b/bar",
         "/foo/bar/a",
         "/foo/bar/a/b",
         "/foo/a/bar/b",
@@ -825,7 +846,7 @@ describe("IR → Pattern (Generation Tests)", () => {
     },
     {
       rou3: (ir) => {
-        expect(toRou3(ir)).toEqual(["/foo/bar", "/foo/*/bar"]);
+        expect(toRou3(ir)).toEqual(["/foo/:_1?/bar"]);
       },
       "path-to-regexp-v6": (ir) => {
         expect(toPathToRegexpV6(ir)).toBe("/foo/:_1?/bar");
@@ -904,6 +925,30 @@ describe("IR → Pattern (Generation Tests)", () => {
       },
     },
   );
+});
+
+describe("rou3", () => {
+  test("a `*` before more of the route is a catch-all that needs at least one segment", () => {
+    expect(fromRou3("/foo/*/bar")).toEqual({
+      pathname: [
+        { value: "foo", optional: false },
+        { optional: false, catchAll: { greedy: true } },
+        { value: "bar", optional: false },
+      ],
+    });
+  });
+
+  test("a route with more than one greedy catch-all throws", () => {
+    expect(() =>
+      toRou3({
+        pathname: [
+          { optional: false, catchAll: { greedy: true, name: "a" } },
+          { value: "foo", optional: false },
+          { optional: true, catchAll: { greedy: true } },
+        ],
+      }),
+    ).toThrow(ConvertRouteError);
+  });
 });
 
 describe("Helper Functions", () => {
